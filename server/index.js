@@ -1,109 +1,186 @@
+// index.js
 const express = require('express');
 const webPush = require('web-push');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const { Pool } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// In-memory storage for subscriptions. 
-// For a production app, you would use a persistent database (e.g., Redis, PostgreSQL).
-let subscriptions = [];
-
-// --- VAPID Keys ---
-// You should generate your own VAPID keys and store them as environment variables.
-// To generate keys, run: npx web-push generate-vapid-keys
-const vapidKeys = {
-    publicKey: process.env.VAPID_PUBLIC_KEY || 'BPhgcyf5kY_H29yV8s_1jA3S5OtT_l4aLg3g1y_aH7-pQxWz8s_R6n9n0z9g9Z3i2y_J6h9f1k2q4w0',
-    privateKey: process.env.VAPID_PRIVATE_KEY || 'YOUR_PRIVATE_KEY_HERE' // REPLACE THIS
-};
-
-if (vapidKeys.privateKey === 'YOUR_PRIVATE_KEY_HERE') {
-    console.warn('WARNING: You are using a placeholder VAPID private key. Please generate your own and set it as an environment variable.');
-}
-
-webPush.setVapidDetails(
-    'mailto:your-email@example.com', // Replace with your email
-    vapidKeys.publicKey,
-    vapidKeys.privateKey
-);
-
-app.use(cors());
+// ---------- middleware ----------
+app.use(cors()); // tighten allowed origins later if you want
 app.use(bodyParser.json());
 
-// Render health check endpoint
+// ---------- health + public key ----------
 app.get('/health', (_, res) => res.status(200).send('ok'));
+app.get('/vapidPublicKey', (_, res) =>
+  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || '' })
+);
 
+// ---------- web-push ----------
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL || 'mailto:you@example.com';
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 
-// Endpoint for clients to subscribe for push notifications
-app.post('/subscribe', (req, res) => {
-    const { subscription, reminders } = req.body;
+if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+  console.warn('⚠️  Missing VAPID keys. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.');
+}
+webPush.setVapidDetails(CONTACT_EMAIL, VAPID_PUBLIC_KEY || 'missing', VAPID_PRIVATE_KEY || 'missing');
 
-    // Find if the subscription already exists
-    const existingSubIndex = subscriptions.findIndex(s => s.subscription.endpoint === subscription.endpoint);
-    
-    if (existingSubIndex > -1) {
-        // Update existing subscription with new reminders
-        subscriptions[existingSubIndex] = { subscription, reminders };
-        console.log(`Updated subscription for endpoint: ${subscription.endpoint}`);
-    } else {
-        // Add new subscription
-        subscriptions.push({ subscription, reminders });
-        console.log(`New subscription added for endpoint: ${subscription.endpoint}`);
+// ---------- database ----------
+const useSSL = process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: useSSL
+});
+
+async function initDb() {
+  await pool.query(`
+    create table if not exists subscriptions (
+      id serial primary key,
+      endpoint text unique not null,
+      p256dh text not null,
+      auth text not null,
+      reminders jsonb not null default '[]'::jsonb,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    );
+    create index if not exists idx_subscriptions_updated_at on subscriptions(updated_at desc);
+  `);
+}
+
+async function upsertSubscription({ subscription, reminders }) {
+  const { endpoint, keys } = subscription || {};
+  if (!endpoint || !keys?.p256dh || !keys?.auth) {
+    throw new Error('Invalid subscription payload');
+  }
+  const r = Array.isArray(reminders) ? reminders : [];
+  await pool.query(
+    `
+    insert into subscriptions (endpoint, p256dh, auth, reminders)
+    values ($1, $2, $3, $4)
+    on conflict (endpoint)
+    do update set p256dh = excluded.p256dh,
+                  auth = excluded.auth,
+                  reminders = excluded.reminders,
+                  updated_at = now()
+    `,
+    [endpoint, keys.p256dh, keys.auth, JSON.stringify(r)]
+  );
+}
+
+async function getAllSubscriptions() {
+  const { rows } = await pool.query(`select endpoint, p256dh, auth, reminders from subscriptions`);
+  return rows.map(r => ({
+    subscription: {
+      endpoint: r.endpoint,
+      keys: { p256dh: r.p256dh, auth: r.auth }
+    },
+    reminders: r.reminders || []
+  }));
+}
+
+async function removeSubscriptionByEndpoint(endpoint) {
+  await pool.query(`delete from subscriptions where endpoint = $1`, [endpoint]);
+}
+
+// ---------- routes ----------
+app.post('/subscribe', async (req, res) => {
+  try {
+    const { subscription, reminders } = req.body || {};
+    await upsertSubscription({ subscription, reminders });
+    res.status(201).json({ message: 'Subscription saved.' });
+  } catch (e) {
+    console.error('subscribe error', e);
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.post('/send-test', async (req, res) => {
+  try {
+    const { subscription } = req.body || {};
+    if (!subscription?.endpoint) return res.status(400).json({ error: 'Missing subscription' });
+    const payload = JSON.stringify({ title: 'The Game Reminder', body: 'Test notification 🚀' });
+    await webPush.sendNotification(subscription, payload);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('send-test error', e.statusCode, e.body || e.message);
+    res.status(500).json({ error: 'Failed to send test' });
+  }
+});
+
+// ---------- scheduler + catch-up ----------
+let lastCheck = new Date(Date.now() - 30 * 60 * 1000); // catch up 30 min at cold start
+
+function hhmm(d) {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function timesBetween(since, now) {
+  const out = new Set();
+  for (let t = new Date(since); t <= now; t = new Date(t.getTime() + 60_000)) {
+    out.add(hhmm(t));
+  }
+  return out;
+}
+
+async function scanAndSendSince(since) {
+  const now = new Date();
+  const windowTimes = timesBetween(since, now);
+  const subs = await getAllSubscriptions();
+
+  for (const sub of subs) {
+    for (const r of sub.reminders || []) {
+      if (windowTimes.has(r.time)) {
+        const payload = JSON.stringify({
+          title: 'The Game Reminder',
+          body: r.name ? `Don't forget "${r.name}"` : 'Reminder time!'
+        });
+        try {
+          await webPush.sendNotification(sub.subscription, payload);
+          console.log('sent to', sub.subscription.endpoint, 'for', r.time);
+        } catch (error) {
+          console.warn('send error', error.statusCode, error.body || error.message);
+          // 410 Gone (or 404 Not Found) => remove dead subscription
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            await removeSubscriptionByEndpoint(sub.subscription.endpoint);
+            console.log('removed dead subscription', sub.subscription.endpoint);
+          }
+        }
+      }
     }
+  }
 
-    res.status(201).json({ message: 'Subscription received.' });
-});
+  lastCheck = now;
+}
 
-app.post('/send-test', (req, res) => {
-    const { subscription } = req.body;
-    
-    const payload = JSON.stringify({
-        title: 'Test Notification',
-        body: 'If you see this, the push server is working!'
-    });
-
-    webPush.sendNotification(subscription, payload)
-        .then(() => res.status(200).json({ message: 'Test notification sent.' }))
-        .catch(err => {
-            console.error('Error sending test notification:', err);
-            res.sendStatus(500);
-        });
-});
-
-
-// Check for reminders every minute
+// normal 1-minute sweep while the instance is awake
 setInterval(() => {
-    const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    
-    console.log(`[${currentTime}] Checking for reminders... ${subscriptions.length} subscriptions active.`);
+  const since = new Date(Date.now() - 60_000);
+  scanAndSendSince(since).catch(err => console.error('interval scan error', err));
+}, 60 * 1000);
 
-    subscriptions.forEach(sub => {
-        sub.reminders.forEach(reminder => {
-            if (reminder.time === currentTime) {
-                console.log(`Sending reminder for "${reminder.name}" to ${sub.subscription.endpoint}`);
-                
-                const payload = JSON.stringify({
-                    title: 'The Game Reminder',
-                    body: `Don't forget your habit: "${reminder.name}"!`
-                });
-
-                webPush.sendNotification(sub.subscription, payload)
-                    .catch(error => {
-                        console.error('Error sending notification: ', error);
-                        // If subscription is expired or invalid, remove it
-                        if (error.statusCode === 410) {
-                            subscriptions = subscriptions.filter(s => s.subscription.endpoint !== sub.subscription.endpoint);
-                            console.log(`Removed invalid subscription: ${sub.subscription.endpoint}`);
-                        }
-                    });
-            }
-        });
-    });
-
-}, 60 * 1000); // 60 seconds
-
-app.listen(PORT, () => {
-    console.log(`Push server running on port ${PORT}`);
+// called by external ping to catch up after sleeps/restarts
+app.get('/check', async (_, res) => {
+  try {
+    await scanAndSendSince(lastCheck);
+    res.json({ ok: true, lastCheck });
+  } catch (e) {
+    console.error('check error', e);
+    res.status(500).json({ error: 'check failed' });
+  }
 });
+
+// ---------- start ----------
+(async () => {
+  try {
+    await initDb();
+    app.listen(PORT, () => {
+      console.log(`Push server running on port ${PORT}`);
+    });
+  } catch (e) {
+    console.error('failed to init', e);
+    process.exit(1);
+  }
+})();
