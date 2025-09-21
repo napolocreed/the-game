@@ -1,0 +1,23 @@
+{
+  "short_name": "The Game",
+  "name": "The Game - Beta",
+  "description": "A gamified wellness app with a pixel art aesthetic, designed to create lasting motivation for healthy life changes.",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#2c2121",
+  "background_color": "#2c2121"
+}

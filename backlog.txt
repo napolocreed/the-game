@@ -1,0 +1,150 @@
+# The Game - Development Backlog
+
+This document outlines the planned sprints for building The Game.
+
+---
+
+### Phase 1: Foundation (Sprints 1-7) - Completed
+The initial development phase established the core application. Key features implemented include:
+- **Foundation:** Basic app structure, habit creation/completion, streak tracking, and data persistence.
+- **Gamification:** XP and leveling system, quest board, and a badge/achievement system.
+- **UI/UX:** Tabbed navigation, a dedicated progress/analytics page with charts, and a polished, mobile-friendly UI.
+
+---
+
+### Phase 2: Core Feature Expansion (Sprints 8-18) - Completed
+This phase focused on enriching the core experience with advanced features for compassion, planning, and data management.
+
+#### Sprint 8: Completion States & Failure Management
+- **[DONE]** Architecture: Added a `CompletionStatus` enum ('pending', 'completed', 'failed', 'skipped').
+- **[DONE]** UI: Replaced the binary Done/Delete system with distinct actions for "Done," "Missed," and "Skip."
+- **[DONE]** Logic: Implemented differentiated impact on streaks for each completion status.
+- **[DONE]** UI: Displayed compassionate messages on failures.
+
+#### Sprint 9: PWA Notifications & Reminders
+- **[DONE]** Architecture: Integrated the browser's Notification API for in-app functionality.
+- **[DONE]** UI: Added an optional "Reminder time" field in the habit creation modal.
+- **[DONE]** Logic: Implemented scheduled notifications for daily reminders, streak warnings, level-ups, and badges (while app is open).
+- **[DONE]** UI: Created a notification management toggle in Settings.
+- **[Moved to Sprint 21]** Technical: Use a Service Worker to enable notifications even when the app is closed.
+
+#### Sprint 10: Enriched Quest Library
+- **[IN PROGRESS]** Content: Developed an initial pool of ~15 varied quests. (Moved expansion to Sprint 19).
+- **[DONE]** Logic: Implemented a smart quest selection algorithm that adapts to user habits.
+- **[Moved to Sprint 19]** UI: Add a preview of tomorrow's quests.
+- **[Moved to Sprint 19]** Content: Use templates with variables for dynamic XP rewards.
+
+#### Sprint 11: Weekly Habit Planning
+- **[DONE]** Architecture: Enhanced the `Habit` type with `scheduleDays`.
+- **[DONE]** UI: Added a "Planning" section to the habit creation modal with a visual day selector.
+- **[DONE]** Logic: Filtered the main view to show only habits scheduled for the current day.
+- **[DONE]** Migration: Ensured existing habits default to being scheduled for every day.
+- **[NOTE]** The daily load indicator was implemented and then removed based on user feedback for a cleaner UI.
+
+#### Sprint 12: Time Navigation
+- **[DONE]** Architecture: Separated `viewingDate` from `currentDate` in the global state.
+- **[DONE]** UI: Implemented a full time navigation header with arrows and a "Today" button.
+- **[DONE]** Logic: Made all relevant views adapt to the `viewingDate`.
+- **[DONE]** UX: Provided a 48-hour window to log completions for past days.
+- **[DONE]** UX: Added visual feedback for past, non-editable days.
+
+#### Sprint 13: Granular Badge System
+- **[DONE]** Content: Created new, specialized badges (Temporal, Recovery, Performance, Category-specific).
+- **[DONE]** UI: Added a hint system for locked badges (progress bars).
+- **[DONE]** Logic: Extended the event tracking system to support new badge conditions.
+- **[Moved to Sprint 19]** UI: Design more satisfying badge unlock animations with particle effects.
+
+#### Sprint 14: Advanced Metrics & Progress Enhancement
+- **[DONE]** UI: Added a GitHub-style completion heatmap.
+- **[DONE]** UI: Added a "Personal Insights" section with automated observations (Most Productive Day, etc.).
+- **[DONE]** Logic: Calculated several advanced metrics.
+- **[Moved to Sprint 20]** UI: Add a line chart showing streak progression for individual habits.
+- **[Moved to Sprint 20]** Logic: Calculate "recovery rate after breaking a streak" metric.
+
+#### Sprint 15: Planning Templates & Advanced UX
+- **[DONE]** UI: Added weekly planning templates ("Weekend Wellness," etc.).
+- **[DONE]** UI: Enabled drag-and-drop reordering of habits.
+- **[DONE]** Architecture: Implemented an archiving system for habits.
+- **[DONE]** UI: Added a "Duplicate Habit" feature.
+
+#### Sprint 16: Backup & Export System
+- **[DONE]** Logic: Implemented a full data export to a versioned JSON file.
+- **[DONE]** Logic: Created a data import feature with validation.
+- **[DONE]** UI: Added a "Backup & Restore" section in Settings.
+- **[DONE]** Logic: Implemented optional weekly auto-backups.
+
+#### Sprint 17: Calendar View & Advanced Analytics
+- **[DONE]** UI: Created a new "Calendar" tab with a monthly view.
+- **[DONE]** UI: Used colored dots on each day to represent habit status and made days clickable for details.
+- **[DONE]** Logic: Optimized historical data loading for current app state.
+- **[Moved to Sprint 20]** UI: Allow users to add optional annotations to specific days.
+
+#### Sprint 18: Polish & UX Optimizations
+- **[DONE]** UX: Improved the mobile interface with larger touch targets.
+- **[DONE]** UI: Added basic animations and micro-interactions for a responsive feel.
+- **[Moved to Sprint 21]** UX: Implement swipe gestures on habit items.
+- **[Moved to Sprint 21]** Logic: Implement performance optimizations like lazy loading for historical data.
+- **[Moved to Sprint 21]** UX: Enhance the new user onboarding experience with an interactive tutorial.
+
+---
+
+### Phase 3: Polish & Enrichment (Active Sprints)
+This phase focuses on completing the remaining non-AI features to create a polished, deeply engaging experience.
+
+---
+
+### Sprint 19: Gamification Deep Dive
+**Goal:** Enhance the fun and variety of the gamification systems.
+**Features:**
+- **Content:** Expand the quest library to 30-50 varied quests to ensure novelty.
+- **UI:** Implement a "Tomorrow's Quests" preview on the quest board.
+- **UI:** Add more satisfying badge unlock animations, potentially with particle effects.
+- **Logic:** Refactor quests to support dynamic XP rewards (e.g., based on number of habits).
+
+---
+
+### Sprint 20: Advanced Analytics & Insights
+**Goal:** Provide users with deeper, more actionable insights into their long-term progress.
+**Features:**
+- **UI:** Create a new line chart visualization on the Progress page to track an individual habit's streak over time.
+- **UI:** Add an "Annotations" feature to the Calendar view, allowing users to add short notes to any day.
+- **Logic:** Calculate and display the "recovery rate after breaking a streak" metric in the Personal Insights section.
+
+---
+
+### Sprint 21: Advanced PWA & UX Polish
+**Goal:** Finalize the PWA capabilities and add key quality-of-life UX improvements.
+**Features:**
+- **Technical:** Implement a Service Worker for push notifications to enable reminders even when the app is closed.
+- **UX:** Add swipe gestures to the main habit list (e.g., swipe right to complete).
+- **UX:** Replace the static new-user message with a short, interactive tutorial highlighting key features.
+- **Performance:** Investigate and implement lazy loading for historical data (e.g., on the Progress page) to ensure long-term performance.
+
+---
+
+## AI Roadmap (Post-Sprint 21)
+
+### Phase 1: Smart Foundations
+- **Sprint AI-1:** Behavioral data collection and user profiling.
+- **Sprint AI-2:** Daily AI coach with basic habit recommendations.
+- **Sprint AI-3:** Contextual motivational messages and smart notifications.
+
+### Phase 2: Advanced Recommendations
+- **Sprint AI-4:** User-validated planning and optimization suggestions.
+- **Sprint AI-5:** Personalized quest generation based on user patterns.
+- **Sprint AI-6:** Preventive burnout detection and compassionate interventions.
+
+### Phase 3: Behavioral Intelligence
+- **Sprint AI-7:** AI-powered weekly planner with multi-objective optimization.
+- **Sprint AI-8:** System for learning user preferences via a feedback loop.
+- **Sprint AI-9:** "Expert Coach" mode with complex behavioral analysis.
+
+---
+
+## Cross-Cutting Well-Being Considerations
+**To be integrated into every sprint:**
+- Use compassionate messaging, especially for failures.
+- Build in flexibility to prevent perfectionism.
+- Use voluntary limitations to avoid user overload.
+- Celebrate small victories and incremental progress.
+- Positively reframe potentially guilt-inducing concepts.
