@@ -100,12 +100,23 @@ app.post('/subscribe', async (req, res) => {
 app.post('/send-test', async (req, res) => {
   try {
     const { subscription } = req.body || {};
-    if (!subscription?.endpoint) return res.status(400).json({ error: 'Missing subscription' });
-    const payload = JSON.stringify({ title: 'The Game Reminder', body: 'Test notification 🚀' });
+    if (!subscription?.endpoint) {
+      console.log('/send-test received bad request: no subscription');
+      return res.status(400).json({ error: 'Missing subscription' });
+    }
+
+    console.log('Attempting to send test notification to:', subscription.endpoint);
+    const payload = JSON.stringify({ title: 'The Game', body: 'This is a test notification! 🚀' });
+    
     await webPush.sendNotification(subscription, payload);
+    
+    console.log('Successfully queued test notification for:', subscription.endpoint);
     res.json({ ok: true });
   } catch (e) {
-    console.error('send-test error', e.statusCode, e.body || e.message);
+    // Log the full error object for more details
+    console.error('Failed to send test notification. Error details:', e);
+    // The existing log is good too, it captures specific web-push properties
+    console.error('send-test error status:', e.statusCode, 'body:', e.body || e.message);
     res.status(500).json({ error: 'Failed to send test' });
   }
 });
