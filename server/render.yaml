@@ -11,3 +11,9 @@ services:
         sync: false
       - key: VAPID_PRIVATE_KEY
         sync: false
+      - key: CONTACT_EMAIL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        sync: false
