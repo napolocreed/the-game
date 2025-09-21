@@ -31,6 +31,10 @@ webPush.setVapidDetails(
 app.use(cors());
 app.use(bodyParser.json());
 
+// Render health check endpoint
+app.get('/health', (_, res) => res.status(200).send('ok'));
+
+
 // Endpoint for clients to subscribe for push notifications
 app.post('/subscribe', (req, res) => {
     const { subscription, reminders } = req.body;
