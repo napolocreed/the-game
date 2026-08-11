@@ -1,3 +1,5 @@
+import type React from 'react';
+
 export enum HabitType {
   BUILD = 'build',
   REDUCE = 'reduce',
@@ -59,6 +61,8 @@ export interface TemplateHabit {
 export enum QuestType {
   COUNT = 'count',
   STREAK = 'streak',
+  RESIST_URGE = 'resist_urge', // ride out N urges with the breathing tool
+  JOURNAL = 'journal', // write a journal note for today
 }
 
 export interface Quest {
@@ -89,9 +93,53 @@ export interface Badge {
     baseName: string; // "Streak Master"
     icon: React.FC<React.SVGProps<SVGSVGElement>>;
     tiers: BadgeTier[];
-    getProgress: (profile: PlayerProfile, habits: Habit[], completions: Completion[]) => number;
+    getProgress: (profile: PlayerProfile, habits: Habit[], completions: Completion[], quits?: Quit[]) => number;
 }
 
+
+// --- Recovery / "Boss Fights" ---
+// A Quit tracks abstinence from something (an addiction, a bad habit to break).
+// Unlike daily habits, progress is measured in continuous clean time, and a
+// relapse never erases history: best streak and total clean days are permanent.
+
+export interface Relapse {
+  date: string; // ISO Date string
+  note?: string; // optional context note
+  trigger?: string; // optional trigger tag (see TRIGGER_OPTIONS)
+}
+
+export interface UrgeEvent {
+  date: string; // ISO Date string
+  trigger?: string; // optional trigger tag
+}
+
+export interface SavingsGoal {
+  name: string; // what the saved money goes toward, e.g. "PS5"
+  price: number;
+}
+
+export interface Quit {
+  id: string;
+  name: string;
+  createdAt: string; // ISO Date string (when tracking started in the app)
+  firstStartDate: string; // ISO Date string (start of the very first streak, may be backdated)
+  startDate: string; // ISO Date string (start of the CURRENT streak = last relapse or firstStartDate)
+  relapses: Relapse[];
+  urgesResisted: number; // lifetime count
+  urgesTodayDate: string | null; // day key of the last resisted urge (for the daily XP cap)
+  urgesToday: number;
+  urgeLog?: UrgeEvent[]; // dated urges (newer field; urgesResisted predates it)
+  motivation?: string; // the user's own "why I quit", shown while riding out an urge
+  costPerDay?: number | null; // optional money saved per clean day
+  savingsGoal?: SavingsGoal | null; // optional concrete reward the savings go toward
+  milestonesAwarded: number[]; // milestone day-counts already rewarded for the current streak
+  isArchived?: boolean;
+}
+
+export interface DayNote {
+  mood?: number; // 1 (worst) to 5 (best)
+  text?: string;
+}
 
 export enum CompletionStatus {
   COMPLETED = 'completed',

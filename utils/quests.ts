@@ -1,4 +1,4 @@
-import { Quest, HabitCategory, Habit, QuestType, HabitType } from '../types';
+import { Quest, HabitCategory, Habit, Quit, QuestType, HabitType } from '../types';
 
 interface QuestTemplate {
   type: QuestType;
@@ -12,6 +12,36 @@ interface QuestTemplate {
   xpReward: number;
   context: 'any' | 'weekday' | 'weekend';
 }
+
+// Quests tied to the Boss Fights / journal systems. RESIST_URGE quests only
+// appear when there is an active quit; they can stay unfinished on an
+// urge-free day, which is fine — they are a bonus for hard days, not a demand.
+const RECOVERY_QUEST_POOL: QuestTemplate[] = [
+  {
+    type: QuestType.RESIST_URGE,
+    title: 'Wave Rider',
+    description: 'Ride out 1 urge with the breathing tool. It always passes.',
+    objective: { target: 1 },
+    xpReward: 50,
+    context: 'any',
+  },
+  {
+    type: QuestType.RESIST_URGE,
+    title: 'Storm Surfer',
+    description: 'Ride out 2 urges today. The waves break on you now.',
+    objective: { target: 2 },
+    xpReward: 90,
+    context: 'any',
+  },
+  {
+    type: QuestType.JOURNAL,
+    title: 'Dear Diary',
+    description: "Write today's journal entry (a mood or a note in the Calendar).",
+    objective: { target: 1 },
+    xpReward: 30,
+    context: 'any',
+  },
+];
 
 const QUEST_POOL: QuestTemplate[] = [
   // === GENERIC COUNT QUESTS ===
@@ -250,12 +280,13 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return newArray;
 };
 
-export const generateDailyQuests = (count: number = 3, habits: Habit[]): Quest[] => {
+export const generateDailyQuests = (count: number = 3, habits: Habit[], quits: Quit[] = []): Quest[] => {
   const today = new Date();
   const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
   const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
 
   const activeHabits = habits.filter(h => !h.isArchived);
+  const activeQuits = quits.filter(q => !q.isArchived);
 
   const possibleQuests = QUEST_POOL.filter(template => {
     // 1. Context check (weekday/weekend/any)
@@ -284,8 +315,24 @@ export const generateDailyQuests = (count: number = 3, habits: Habit[]): Quest[]
     return true;
   });
   
-  const shuffledPool = shuffleArray(possibleQuests);
-  const selectedTemplates = shuffledPool.slice(0, count);
+  // Recovery quests join the pool when relevant, but at most one of each kind
+  // per day so they never crowd out the habit quests.
+  const possibleRecoveryQuests = RECOVERY_QUEST_POOL.filter(template => {
+    if (template.type === QuestType.RESIST_URGE) return activeQuits.length > 0;
+    return true; // JOURNAL is always available
+  });
+
+  const shuffledPool = shuffleArray([...possibleQuests, ...shuffleArray(possibleRecoveryQuests)]);
+  const selectedTemplates: QuestTemplate[] = [];
+  const usedSpecialTypes = new Set<QuestType>();
+  for (const template of shuffledPool) {
+    if (selectedTemplates.length >= count) break;
+    if (template.type === QuestType.RESIST_URGE || template.type === QuestType.JOURNAL) {
+      if (usedSpecialTypes.has(template.type)) continue;
+      usedSpecialTypes.add(template.type);
+    }
+    selectedTemplates.push(template);
+  }
 
   return selectedTemplates.map(template => ({
     id: crypto.randomUUID(),

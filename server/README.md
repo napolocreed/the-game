@@ -28,7 +28,7 @@ VAPID_PRIVATE_KEY=YOUR_GENERATED_PRIVATE_KEY
 
 Then, update `server/index.js` to use a library like `dotenv` or manually set them for local testing.
 
-**Important:** You must also update the `VAPID_PUBLIC_KEY` in the client-side code at `hooks/useGameLogic.ts` to match the public key you generated.
+**Note:** The client fetches the VAPID public key directly from the server's `/vapidPublicKey` endpoint — there is nothing to copy into the client code anymore.
 
 ### 4. Start the Server
 ```bash
@@ -48,6 +48,8 @@ This server is ready to be deployed on a service like Render.
     *   `VAPID_PUBLIC_KEY`: Paste the public key you generated.
     *   `VAPID_PRIVATE_KEY`: Paste the private key you generated.
 6.  **Deploy!**
-7.  **Update Client URL:** Once deployed, Render will give you a public URL (e.g., `https://your-app.onrender.com`). You **must** update the `PUSH_SERVER_URL` constant in the client-side file `hooks/useGameLogic.ts` to this new URL.
+7.  **Update Client URL:** Once deployed, Render will give you a public URL (e.g., `https://your-app.onrender.com`). Set it as `VITE_PUSH_SERVER_URL` in the client's `.env.local` (or as the `PUSH_SERVER_URL` repository variable for the GitHub Pages deployment), then rebuild the app.
+
+**Free-tier note:** Render's free web services sleep after inactivity, which delays reminders. The `/check` endpoint exists for exactly this: point a free uptime pinger (e.g. cron-job.org or UptimeRobot) at `https://your-app.onrender.com/check` every 10–15 minutes and the server will catch up on any reminders missed while it slept.
 
 That's it! Your push server will now be live and your application will be able to send reliable notifications.

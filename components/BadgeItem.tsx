@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge, PlayerProfile, Habit, Completion } from '../types';
+import { Badge, PlayerProfile, Habit, Completion, Quit } from '../types';
 import { QuestionMarkIcon } from './icons/QuestionMarkIcon';
 import ProgressBar from './ProgressBar';
 import { CheckIcon } from './icons/CheckIcon';
@@ -10,18 +10,19 @@ interface BadgeItemProps {
   profile: PlayerProfile;
   habits: Habit[];
   completions: Completion[];
+  quits?: Quit[];
 }
 
-const BadgeItem: React.FC<BadgeItemProps> = ({ badge, unlockedTierNum, profile, habits, completions }) => {
+const BadgeItem: React.FC<BadgeItemProps> = ({ badge, unlockedTierNum, profile, habits, completions, quits = [] }) => {
   const Icon = badge.icon;
-  
+
   const currentTier = badge.tiers.find(t => t.tier === unlockedTierNum);
   const nextTier = badge.tiers.find(t => t.tier === unlockedTierNum + 1);
-  
+
   const isUnlocked = unlockedTierNum > 0;
   const isMaxed = !nextTier;
 
-  const progress = badge.getProgress(profile, habits, completions);
+  const progress = badge.getProgress(profile, habits, completions, quits);
 
   const displayName = currentTier ? currentTier.name : badge.baseName;
   const displayDescription = currentTier ? currentTier.description : badge.tiers[0].description;

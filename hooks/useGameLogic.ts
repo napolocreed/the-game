@@ -1,17 +1,20 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Habit, PlayerProfile, Quest, Badge, Completion, CompletionStatus, HabitCategory, HabitType, QuestType, BadgeTier, PlayerSettings } from '../types';
+import { Habit, PlayerProfile, Quest, Badge, Completion, CompletionStatus, HabitCategory, HabitType, QuestType, BadgeTier, PlayerSettings, Quit, DayNote } from '../types';
 import { useLocalStorage } from './useLocalStorage';
 // Fix: Removed 'subDays' from date-fns import as it is causing an error.
 import { formatISO, differenceInCalendarDays, isSameDay } from 'date-fns';
 import { calculateXP, calculateXpToNextLevel } from '../utils/xp';
 import { generateDailyQuests } from '../utils/quests';
 import { BADGE_CATALOG, checkAndUnlockBadges } from '../utils/badges';
+import { showAppNotification } from '../utils/notifications';
+import { GameSnapshot, saveMirror, loadMirror, addSnapshot, getLatestSnapshot, requestPersistentStorage } from '../utils/db';
+import { QUIT_MILESTONES, URGE_RESIST_XP, URGE_XP_DAILY_CAP, dueMilestones } from '../utils/quits';
 
 // --- Push Notification Server ---
-// IMPORTANT: Replace this with the URL of your deployed push server.
-const PUSH_SERVER_URL = 'http://localhost:4000'; 
-// IMPORTANT: This key MUST match the public key on your push server.
-const VAPID_PUBLIC_KEY = 'BPhgcyf5kY_H29yV8s_1jA3S5OtT_l4aLg3g1y_aH7-pQxWz8s_R6n9n0z9g9Z3i2y_J6h9f1k2q4w0';
+// Optional: set VITE_PUSH_SERVER_URL (e.g. in .env.local or on your host) to enable
+// server-side push reminders that work even when the app is closed.
+// The VAPID public key is fetched from the server itself, so it can never be out of sync.
+const PUSH_SERVER_URL = ((import.meta.env.VITE_PUSH_SERVER_URL as string | undefined) || '').replace(/\/+$/, '');
 
 // Helper to convert VAPID key
 function urlBase64ToUint8Array(base64String: string) {
@@ -43,6 +46,8 @@ export const useGameLogic = () => {
     },
   });
   const [quests, setQuests] = useLocalStorage<Quest[]>('quests', []);
+  const [quits, setQuits] = useLocalStorage<Quit[]>('quits', []);
+  const [dayNotes, setDayNotes] = useLocalStorage<{ [dateKey: string]: DayNote }>('dayNotes', {});
   const [questsLastGenerated, setQuestsLastGenerated] = useLocalStorage<string | null>('questsLastGenerated', null);
   const [autoBackupEnabled, setAutoBackupEnabled] = useLocalStorage<boolean>('autoBackupEnabled', true);
   const [lastAutoBackupDate, setLastAutoBackupDate] = useLocalStorage<string | null>('lastAutoBackupDate', null);
@@ -51,9 +56,11 @@ export const useGameLogic = () => {
   const [isAddHabitModalOpen, setIsAddHabitModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [newlyUnlockedBadges, setNewlyUnlockedBadges] = useState<{ badge: Badge, tier: BadgeTier }[]>([]);
-  const [activeTab, setActiveTab] = useState<'habits' | 'quests' | 'progress' | 'calendar'>('habits');
-  
+  const [activeTab, setActiveTab] = useState<'habits' | 'quests' | 'battles' | 'progress' | 'calendar'>('habits');
+
   const [habitToConfirmAction, setHabitToConfirmAction] = useState<{habit: Habit, action: 'archive' | 'delete'} | null>(null);
+  const [quitToDelete, setQuitToDelete] = useState<Quit | null>(null);
+  const [milestoneCelebration, setMilestoneCelebration] = useState<{ quitName: string; days: number; label: string; xp: number } | null>(null);
   const [habitToDuplicate, setHabitToDuplicate] = useState<Habit | null>(null);
   const [notificationPermission, setNotificationPermission] = useState('Notification' in window ? Notification.permission : 'denied');
   
@@ -63,7 +70,9 @@ export const useGameLogic = () => {
 
   // --- Push Notification State ---
   const [pushSubscription, setPushSubscription] = useLocalStorage<PushSubscriptionJSON | null>('pushSubscription', null);
+  const [pushEnabled, setPushEnabled] = useLocalStorage<boolean>('pushEnabled', false);
   const [testNotifMessage, setTestNotifMessage] = useState('');
+  const [pushStatusMessage, setPushStatusMessage] = useState('');
   const syncDebounceTimeout = useRef<number | null>(null);
 
   const goToPreviousDay = useCallback(() => {
@@ -121,20 +130,71 @@ export const useGameLogic = () => {
       }
   }, [habits, profile, setHabits, setProfile]); 
 
-  // Auto-backup effect
+  const hasMeaningfulData = habits.length > 0 || completions.length > 0 || quits.length > 0 || profile.totalXP > 0;
+
+  // Ask the browser to protect this origin's storage from eviction (best effort).
   useEffect(() => {
-    if (!autoBackupEnabled) return;
+    requestPersistentStorage();
+  }, []);
+
+  // --- Data safety net ---
+  // localStorage is the primary store but browsers can evict it. Mirror every
+  // change into IndexedDB, and offer to restore from the mirror when the app
+  // boots with empty data. (The old "auto-backup" wrote into localStorage
+  // itself, so it vanished together with the data it was meant to protect.)
+  const [recoveryData, setRecoveryData] = useState<GameSnapshot | null>(null);
+  const recoveryCheckDone = useRef(false);
+
+  useEffect(() => {
+    if (recoveryCheckDone.current) return;
+    recoveryCheckDone.current = true;
+    if (hasMeaningfulData) return;
+
+    (async () => {
+      const mirror = (await loadMirror()) || (await getLatestSnapshot());
+      if (mirror && ((mirror.habits?.length ?? 0) > 0 || (mirror.completions?.length ?? 0) > 0 || (mirror.quits?.length ?? 0) > 0)) {
+        setRecoveryData(mirror);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const confirmRecovery = useCallback(() => {
+    if (!recoveryData) return;
+    setHabits((recoveryData.habits as Habit[]) || []);
+    setCompletions((recoveryData.completions as Completion[]) || []);
+    setProfile((recoveryData.profile as PlayerProfile) || {
+      level: 1, totalXP: 0, currentXP: 0, xpToNextLevel: calculateXpToNextLevel(1),
+      unlockedBadges: {}, totalQuestsCompleted: 0, settings: { dailyHabitLimit: null },
+    });
+    setQuests((recoveryData.quests as Quest[]) || []);
+    setQuits((recoveryData.quits as Quit[]) || []);
+    setDayNotes((recoveryData.dayNotes as { [dateKey: string]: DayNote }) || {});
+    setQuestsLastGenerated(recoveryData.questsLastGenerated || null);
+    setRecoveryData(null);
+  }, [recoveryData, setHabits, setCompletions, setProfile, setQuests, setQuestsLastGenerated]);
+
+  const dismissRecovery = useCallback(() => {
+    setRecoveryData(null);
+  }, []);
+
+  // Continuous mirror of the current state into IndexedDB (skips empty state so a
+  // fresh boot can never clobber a good mirror before recovery is offered).
+  useEffect(() => {
+    if (!hasMeaningfulData) return;
+    const timeout = window.setTimeout(() => {
+      saveMirror({ habits, completions, profile, quests, quits, dayNotes, questsLastGenerated, savedAt: new Date().toISOString() });
+    }, 1000);
+    return () => window.clearTimeout(timeout);
+  }, [habits, completions, profile, quests, quits, dayNotes, questsLastGenerated, hasMeaningfulData]);
+
+  // Weekly snapshot history in IndexedDB (keeps the last 8).
+  useEffect(() => {
+    if (!autoBackupEnabled || !hasMeaningfulData) return;
 
     const performAutoBackup = () => {
-      console.log("Performing weekly auto-backup...");
-      const backupData = {
-        habits,
-        completions,
-        profile,
-        quests,
-        questsLastGenerated,
-      };
-      localStorage.setItem('the-game-auto-backup', JSON.stringify(backupData));
+      console.log("Performing weekly auto-backup snapshot...");
+      addSnapshot({ habits, completions, profile, quests, quits, dayNotes, questsLastGenerated, savedAt: new Date().toISOString() });
       setLastAutoBackupDate(new Date().toISOString());
     };
 
@@ -148,7 +208,7 @@ export const useGameLogic = () => {
         performAutoBackup();
       }
     }
-  }, [autoBackupEnabled, habits, completions, profile, quests, questsLastGenerated, lastAutoBackupDate, setLastAutoBackupDate]);
+  }, [autoBackupEnabled, hasMeaningfulData, habits, completions, profile, quests, questsLastGenerated, lastAutoBackupDate, setLastAutoBackupDate]);
 
 
   // Request notification permission
@@ -163,7 +223,7 @@ export const useGameLogic = () => {
   }, []);
 
   const syncRemindersWithServer = useCallback((sub: PushSubscription | PushSubscriptionJSON | null, allHabits: Habit[]) => {
-      if (!sub) return;
+      if (!sub || !PUSH_SERVER_URL) return;
       if (syncDebounceTimeout.current) {
         clearTimeout(syncDebounceTimeout.current);
       }
@@ -171,12 +231,18 @@ export const useGameLogic = () => {
       syncDebounceTimeout.current = window.setTimeout(async () => {
         const reminders = allHabits
           .filter(h => !h.isArchived && h.reminderTime)
-          .map(h => ({ id: h.id, name: h.name, time: h.reminderTime }));
+          .map(h => ({ id: h.id, name: h.name, time: h.reminderTime, days: h.scheduleDays }));
 
         try {
           await fetch(`${PUSH_SERVER_URL}/subscribe`, {
             method: 'POST',
-            body: JSON.stringify({ subscription: sub, reminders }),
+            body: JSON.stringify({
+              subscription: sub,
+              reminders,
+              // Reminder times are entered in the user's local time; the server
+              // needs the timezone to fire them at the right moment.
+              tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            }),
             headers: { 'Content-Type': 'application/json' },
           });
           console.log('Reminders synced with push server.');
@@ -187,49 +253,130 @@ export const useGameLogic = () => {
       }, 2000); // Debounce syncs by 2 seconds
   }, []);
 
-  // Effect to subscribe to push notifications and perform initial sync
-  useEffect(() => {
-    const subscribeAndSync = async () => {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        return;
-      }
+  // Explicit opt-in to server push. Never touches the browser permission state on
+  // failure (the old behavior made notifications look "Blocked" whenever the
+  // server was unreachable or the VAPID key was wrong).
+  const handleTogglePush = useCallback(async (enable: boolean) => {
+    if (!enable) {
+      setPushEnabled(false);
+      setPushStatusMessage('');
       try {
-        const registration = await navigator.serviceWorker.ready;
-        let sub = await registration.pushManager.getSubscription();
-
-        if (sub === null) {
-          console.log('Not subscribed to push, subscribing...');
-          sub = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-          });
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.getRegistration();
+          const sub = await registration?.pushManager.getSubscription();
+          await sub?.unsubscribe();
         }
-        
-        const subJSON = sub.toJSON();
-        setPushSubscription(subJSON);
-        syncRemindersWithServer(subJSON, habits);
-      } catch (error) {
-        console.error('Failed to subscribe to push notifications:', error);
-        setNotificationPermission('denied'); // Assume permission issue if subscription fails
+      } catch (err) {
+        console.warn('Failed to unsubscribe from push:', err);
       }
-    };
-
-    if (notificationPermission === 'granted') {
-      subscribeAndSync();
+      setPushSubscription(null);
+      return;
     }
-  }, [notificationPermission, habits, syncRemindersWithServer]);
 
-  // Effect to re-sync reminders with the server when habits change
+    if (!PUSH_SERVER_URL) {
+      setPushStatusMessage('No push server configured (VITE_PUSH_SERVER_URL).');
+      return;
+    }
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setPushStatusMessage('Push notifications are not supported by this browser.');
+      return;
+    }
+
+    setPushStatusMessage('Connecting to push server...');
+    try {
+      const keyResponse = await fetch(`${PUSH_SERVER_URL}/vapidPublicKey`);
+      if (!keyResponse.ok) throw new Error(`Server responded ${keyResponse.status}`);
+      const { publicKey } = await keyResponse.json();
+      if (!publicKey) throw new Error('Push server has no VAPID public key configured.');
+
+      const registration = await navigator.serviceWorker.ready;
+      let sub = await registration.pushManager.getSubscription();
+      if (sub) {
+        // Re-subscribe if the server key changed since the last subscription.
+        const currentKey = sub.options?.applicationServerKey;
+        if (currentKey) {
+          await sub.unsubscribe();
+          sub = null;
+        }
+      }
+      if (!sub) {
+        sub = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        });
+      }
+
+      const subJSON = sub.toJSON();
+      setPushSubscription(subJSON);
+      setPushEnabled(true);
+      setPushStatusMessage('Push reminders enabled!');
+      syncRemindersWithServer(subJSON, habits);
+      setTimeout(() => setPushStatusMessage(''), 5000);
+    } catch (error) {
+      console.error('Failed to enable push notifications:', error);
+      setPushEnabled(false);
+      setPushStatusMessage('Could not reach the push server. Reminders will still fire while the app is open.');
+    }
+  }, [habits, setPushEnabled, setPushSubscription, syncRemindersWithServer]);
+
+  // Re-sync reminders with the server when habits change
   useEffect(() => {
-    if (pushSubscription) {
+    if (pushEnabled && pushSubscription) {
       syncRemindersWithServer(pushSubscription, habits);
     }
-  }, [habits, pushSubscription, syncRemindersWithServer]);
+  }, [habits, pushEnabled, pushSubscription, syncRemindersWithServer]);
+
+  // --- Local reminder scheduler ---
+  // Fires habit reminders while the app is open (tab or installed PWA), with no
+  // server required. Each reminder fires at most once per day, only for habits
+  // scheduled today that haven't been logged yet, within a 60-minute grace window.
+  useEffect(() => {
+    if (notificationPermission !== 'granted') return;
+
+    const checkReminders = () => {
+      const now = new Date();
+      const todayKey = formatISO(now, { representation: 'date' });
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+      let fired: { date: string; habitIds: string[] };
+      try {
+        fired = JSON.parse(localStorage.getItem('remindersFired') || 'null') || { date: todayKey, habitIds: [] };
+      } catch {
+        fired = { date: todayKey, habitIds: [] };
+      }
+      if (fired.date !== todayKey) fired = { date: todayKey, habitIds: [] };
+
+      habits.forEach(habit => {
+        if (habit.isArchived || !habit.reminderTime) return;
+        if (!habit.scheduleDays.includes(now.getDay())) return;
+        if (fired.habitIds.includes(habit.id)) return;
+
+        const [h, m] = habit.reminderTime.split(':').map(Number);
+        if (Number.isNaN(h) || Number.isNaN(m)) return;
+        const dueMinutes = h * 60 + m;
+        if (nowMinutes < dueMinutes || nowMinutes > dueMinutes + 60) return;
+
+        const alreadyLogged = completions.some(c => c.habitId === habit.id && isSameDay(new Date(c.date), now));
+        if (alreadyLogged) return;
+
+        fired.habitIds.push(habit.id);
+        showAppNotification('The Game Reminder', `Don't forget "${habit.name}"!`);
+      });
+
+      localStorage.setItem('remindersFired', JSON.stringify(fired));
+    };
+
+    checkReminders();
+    const intervalId = window.setInterval(checkReminders, 30_000);
+    return () => window.clearInterval(intervalId);
+  }, [habits, completions, notificationPermission]);
 
 
   const handleSendTestNotification = useCallback(async () => {
-    if (!pushSubscription) {
-      setTestNotifMessage('Enable notifications before sending a test.');
+    // Without a push server, test the local notification path instead.
+    if (!PUSH_SERVER_URL || !pushSubscription) {
+      await showAppNotification('The Game', 'This is a test notification! 🚀');
+      setTestNotifMessage('Local test notification sent!');
       setTimeout(() => setTestNotifMessage(''), 5000);
       return;
     }
@@ -258,13 +405,14 @@ export const useGameLogic = () => {
     const lastGeneratedStr = questsLastGenerated ? formatISO(new Date(questsLastGenerated), { representation: 'date' }) : null;
     const activeHabits = habits.filter(h => !h.isArchived);
 
-    if (lastGeneratedStr !== todayStr && activeHabits.length > 0) {
-      setQuests(generateDailyQuests(3, activeHabits));
+    const activeQuits = quits.filter(q => !q.isArchived);
+    if (lastGeneratedStr !== todayStr && (activeHabits.length > 0 || activeQuits.length > 0)) {
+      setQuests(generateDailyQuests(3, activeHabits, activeQuits));
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       setQuestsLastGenerated(today.toISOString());
     }
-  }, [questsLastGenerated, setQuests, setQuestsLastGenerated, habits]);
+  }, [questsLastGenerated, setQuests, setQuestsLastGenerated, habits, quits]);
 
   const handleAddHabit = useCallback((newHabitData: { 
       name: string; 
@@ -291,7 +439,7 @@ export const useGameLogic = () => {
     setHabits(updatedHabits);
 
     setProfile(prevProfile => {
-        const { newlyUnlocked } = checkAndUnlockBadges(prevProfile, updatedHabits, completions, BADGE_CATALOG);
+        const { newlyUnlocked } = checkAndUnlockBadges(prevProfile, updatedHabits, completions, BADGE_CATALOG, quits);
         if (newlyUnlocked.length > 0) {
             const unlockedForModal: { badge: Badge, tier: BadgeTier }[] = [];
             const newBadgeTiers: { [badgeId: string]: number } = {};
@@ -313,7 +461,7 @@ export const useGameLogic = () => {
             setNewlyUnlockedBadges(prev => [...prev, ...unlockedForModal]);
             if (notificationPermission === 'granted') {
                 const badgeNames = unlockedForModal.map(u => u.tier.name).join(', ');
-                new Notification('Achievement Unlocked!', { body: `You've earned: ${badgeNames}` });
+                showAppNotification('Achievement Unlocked!', `You've earned: ${badgeNames}`);
             }
 
             return {
@@ -323,7 +471,7 @@ export const useGameLogic = () => {
         }
         return prevProfile;
     });
-  }, [habits, profile, completions, setHabits, setProfile, setNewlyUnlockedBadges, notificationPermission]);
+  }, [habits, profile, completions, quits, setHabits, setProfile, setNewlyUnlockedBadges, notificationPermission]);
   
   const handleReorderHabits = useCallback((draggedHabitId: string, targetHabitId: string) => {
     setHabits(prevHabits => {
@@ -445,7 +593,7 @@ export const useGameLogic = () => {
     setProfile(prevProfile => {
         let nextProfileState = { ...prevProfile };
         
-        const { newlyUnlocked } = checkAndUnlockBadges(nextProfileState, newHabitsForCalculation, newCompletions, BADGE_CATALOG);
+        const { newlyUnlocked } = checkAndUnlockBadges(nextProfileState, newHabitsForCalculation, newCompletions, BADGE_CATALOG, quits);
         if (newlyUnlocked.length > 0) {
             const unlockedForModal: { badge: Badge, tier: BadgeTier }[] = [];
             const newBadgeTiers: { [badgeId: string]: number } = {};
@@ -474,7 +622,7 @@ export const useGameLogic = () => {
             });
             if (notificationPermission === 'granted') {
                 const badgeNames = unlockedForModal.map(u => u.tier.name).join(', ');
-                new Notification('Achievement Unlocked!', { body: `You've earned: ${badgeNames}` });
+                showAppNotification('Achievement Unlocked!', `You've earned: ${badgeNames}`);
             }
         }
 
@@ -493,7 +641,7 @@ export const useGameLogic = () => {
                 newXpToNextLevel = calculateXpToNextLevel(newLevel);
             }
             if (leveledUp && notificationPermission === 'granted') {
-                new Notification('Level Up!', { body: `You've reached Level ${newLevel}! Keep up the great work!` });
+                showAppNotification('Level Up!', `You've reached Level ${newLevel}! Keep up the great work!`);
             }
             nextProfileState = { ...nextProfileState, level: newLevel, totalXP: newTotalXP, currentXP: newCurrentXP, xpToNextLevel: newXpToNextLevel, totalQuestsCompleted: newTotalQuestsCompleted };
         } else if (questsCompletedNow > 0) {
@@ -503,7 +651,7 @@ export const useGameLogic = () => {
 
         return nextProfileState;
     });
-  }, [habits, quests, completions, viewingDate, isViewingDateEditable, notificationPermission, setHabits, setCompletions, setQuests, setProfile, setNewlyUnlockedBadges]);
+  }, [habits, quests, quits, completions, viewingDate, isViewingDateEditable, notificationPermission, setHabits, setCompletions, setQuests, setProfile, setNewlyUnlockedBadges]);
 
 
   const handleCompleteHabit = useCallback((habitId: string) => {
@@ -655,13 +803,15 @@ export const useGameLogic = () => {
 
   const handleExportData = useCallback(() => {
     const backupData = {
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       data: {
         habits,
         completions,
         profile,
         quests,
+        quits,
+        dayNotes,
         questsLastGenerated,
       }
     };
@@ -676,7 +826,7 @@ export const useGameLogic = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(href);
-  }, [habits, completions, profile, quests, questsLastGenerated]);
+  }, [habits, completions, profile, quests, quits, dayNotes, questsLastGenerated]);
 
   const handleImportFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -711,6 +861,8 @@ export const useGameLogic = () => {
       setCompletions(parsedData.completions || []);
       setProfile(parsedData.profile || { level: 1, totalXP: 0, currentXP: 0, xpToNextLevel: calculateXpToNextLevel(1), unlockedBadges: {} });
       setQuests(parsedData.quests || []);
+      setQuits(parsedData.quits || []); // absent from v1 backups → empty
+      setDayNotes(parsedData.dayNotes || {});
       setQuestsLastGenerated(parsedData.questsLastGenerated || null);
       setImportFileContent(null);
       alert('Data restored successfully! The app will now reload.');
@@ -720,11 +872,246 @@ export const useGameLogic = () => {
       console.error("Restore error:", error);
       setImportFileContent(null);
     }
-  }, [importFileContent, setHabits, setCompletions, setProfile, setQuests, setQuestsLastGenerated]);
+  }, [importFileContent, setHabits, setCompletions, setProfile, setQuests, setQuits, setDayNotes, setQuestsLastGenerated]);
 
   const cancelImport = useCallback(() => {
     setImportFileContent(null);
   }, []);
+
+  // --- Recovery / "Boss Fights" logic ---
+
+  // Shared XP awarding with level-up handling (used by quit milestones and resisted urges).
+  const awardXP = useCallback((amount: number) => {
+    if (amount <= 0) return;
+    setProfile(prev => {
+      let newCurrentXP = prev.currentXP + amount;
+      const newTotalXP = prev.totalXP + amount;
+      let newLevel = prev.level;
+      let newXpToNextLevel = prev.xpToNextLevel;
+      let leveledUp = false;
+      while (newCurrentXP >= newXpToNextLevel) {
+        newLevel += 1;
+        leveledUp = true;
+        newCurrentXP -= newXpToNextLevel;
+        newXpToNextLevel = calculateXpToNextLevel(newLevel);
+      }
+      if (leveledUp && notificationPermission === 'granted') {
+        showAppNotification('Level Up!', `You've reached Level ${newLevel}! Keep up the great work!`);
+      }
+      return { ...prev, level: newLevel, totalXP: newTotalXP, currentXP: newCurrentXP, xpToNextLevel: newXpToNextLevel };
+    });
+  }, [notificationPermission, setProfile]);
+
+  const handleAddQuit = useCallback((data: { name: string; startDate: string; costPerDay: number | null; motivation: string; savingsGoal: { name: string; price: number } | null }) => {
+    const nowISO = formatISO(new Date());
+    const newQuit: Quit = {
+      id: crypto.randomUUID(),
+      name: data.name,
+      createdAt: nowISO,
+      firstStartDate: data.startDate,
+      startDate: data.startDate,
+      relapses: [],
+      urgesResisted: 0,
+      urgesTodayDate: null,
+      urgesToday: 0,
+      urgeLog: [],
+      motivation: data.motivation.trim() || undefined,
+      costPerDay: data.costPerDay,
+      savingsGoal: data.savingsGoal,
+      milestonesAwarded: [],
+      isArchived: false,
+    };
+    setQuits(prev => [...prev, newQuit]);
+  }, [setQuits]);
+
+  // Milestone rewards: whenever a quit's current streak crosses milestones that
+  // haven't been rewarded yet, grant the XP and celebrate. Runs when quits
+  // change and periodically so day boundaries are caught while the app is open.
+  // Backdated quits get their earned milestones immediately — that progress is real.
+  const [dayTick, setDayTick] = useState(() => formatISO(new Date(), { representation: 'date' }));
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setDayTick(formatISO(new Date(), { representation: 'date' }));
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    let totalXp = 0;
+    let celebration: { quitName: string; days: number; label: string; xp: number } | null = null;
+    const updates = new Map<string, number[]>();
+
+    quits.forEach(quit => {
+      const due = dueMilestones(quit);
+      if (due.length === 0) return;
+      const xpForQuit = due.reduce((sum, m) => sum + m.xp, 0);
+      totalXp += xpForQuit;
+      updates.set(quit.id, due.map(m => m.days));
+      const top = due[due.length - 1];
+      celebration = { quitName: quit.name, days: top.days, label: top.label, xp: xpForQuit };
+    });
+
+    if (updates.size === 0) return;
+
+    setQuits(prev => prev.map(q => {
+      const awarded = updates.get(q.id);
+      return awarded ? { ...q, milestonesAwarded: [...q.milestonesAwarded, ...awarded] } : q;
+    }));
+    awardXP(totalXp);
+    setMilestoneCelebration(celebration);
+    if (celebration && notificationPermission === 'granted') {
+      const c = celebration as { quitName: string; days: number; label: string; xp: number };
+      showAppNotification('Milestone reached! ⚔️', `${c.label} clean from "${c.quitName}"! +${c.xp} XP`);
+    }
+  }, [quits, dayTick, awardXP, setQuits, notificationPermission]);
+
+  // Advance daily quests of a non-habit kind (resisted urge, journal entry).
+  // Quest XP and the completion counter are granted here since these quests
+  // complete outside the habit-completion path.
+  const advanceQuestsOfType = useCallback((questType: QuestType) => {
+    let xpGained = 0;
+    let completedNow = 0;
+    let changed = false;
+    const updated = quests.map(quest => {
+      if (quest.type !== questType || quest.isCompleted) return quest;
+      changed = true;
+      const newProgress = Math.min(quest.progress + 1, quest.objective.target);
+      const isNowCompleted = newProgress >= quest.objective.target;
+      if (isNowCompleted) {
+        xpGained += quest.xpReward;
+        completedNow++;
+      }
+      return { ...quest, progress: newProgress, isCompleted: isNowCompleted };
+    });
+    if (!changed) return;
+    setQuests(updated);
+    awardXP(xpGained);
+    if (completedNow > 0) {
+      setProfile(p => ({ ...p, totalQuestsCompleted: (p.totalQuestsCompleted || 0) + completedNow }));
+    }
+  }, [quests, setQuests, awardXP, setProfile]);
+
+  // Resisting an urge is a real victory and gets immediate XP (capped per day
+  // per quit so the reward stays meaningful). Returns the XP granted.
+  const handleResistUrge = useCallback((quitId: string): number => {
+    const quit = quits.find(q => q.id === quitId);
+    if (!quit) return 0;
+
+    const nowISO = formatISO(new Date());
+    const todayKey = formatISO(new Date(), { representation: 'date' });
+    const urgesToday = quit.urgesTodayDate === todayKey ? quit.urgesToday : 0;
+    const xp = urgesToday < URGE_XP_DAILY_CAP ? URGE_RESIST_XP : 0;
+
+    setQuits(prev => prev.map(q => q.id === quitId ? {
+      ...q,
+      urgesResisted: q.urgesResisted + 1,
+      urgesTodayDate: todayKey,
+      urgesToday: urgesToday + 1,
+      urgeLog: [...(q.urgeLog || []), { date: nowISO }],
+    } : q));
+    awardXP(xp);
+    advanceQuestsOfType(QuestType.RESIST_URGE);
+    return xp;
+  }, [quits, setQuits, awardXP, advanceQuestsOfType]);
+
+  // Tags the most recent resisted urge with a trigger (chosen on the victory
+  // screen, after the urge event itself was already recorded).
+  const handleTagLastUrge = useCallback((quitId: string, trigger: string) => {
+    setQuits(prev => prev.map(q => {
+      if (q.id !== quitId) return q;
+      const log = [...(q.urgeLog || [])];
+      if (log.length === 0) return q;
+      log[log.length - 1] = { ...log[log.length - 1], trigger };
+      return { ...q, urgeLog: log };
+    }));
+  }, [setQuits]);
+
+  // A relapse resets the current streak but NEVER the history: best streak and
+  // total clean days are permanent. Milestones re-arm for the comeback.
+  const handleRelapse = useCallback((quitId: string, note: string, trigger?: string) => {
+    const nowISO = formatISO(new Date());
+    setQuits(prev => prev.map(q => q.id === quitId ? {
+      ...q,
+      relapses: [...q.relapses, { date: nowISO, note: note.trim() || undefined, trigger }],
+      startDate: nowISO,
+      milestonesAwarded: [],
+    } : q));
+  }, [setQuits]);
+
+  // Recovery badges (Iron Will, Boss Slayer) progress through quit activity,
+  // which never goes through the habit-completion badge checks — so run one here.
+  useEffect(() => {
+    if (quits.length === 0) return;
+    setProfile(prevProfile => {
+      const { newlyUnlocked } = checkAndUnlockBadges(prevProfile, habits, completions, BADGE_CATALOG, quits);
+      if (newlyUnlocked.length === 0) return prevProfile;
+
+      const unlockedForModal: { badge: Badge, tier: BadgeTier }[] = [];
+      const newBadgeTiers: { [badgeId: string]: number } = {};
+      let badgeXpGained = 0;
+
+      const unlocksByBadgeId = newlyUnlocked.reduce((acc, unlock) => {
+        if (!acc[unlock.badge.id] || unlock.tier.tier > acc[unlock.badge.id].tier.tier) {
+          acc[unlock.badge.id] = unlock;
+        }
+        return acc;
+      }, {} as Record<string, { badge: Badge; tier: BadgeTier }>);
+
+      Object.values(unlocksByBadgeId).forEach(({ badge, tier }) => {
+        unlockedForModal.push({ badge, tier });
+        newBadgeTiers[badge.id] = tier.tier;
+        badgeXpGained += tier.xpReward;
+      });
+
+      setNewlyUnlockedBadges(prev => {
+        const existingIds = new Set(prev.map(b => b.badge.id + b.tier.tier));
+        const trulyNew = unlockedForModal.filter(b => !existingIds.has(b.badge.id + b.tier.tier));
+        return [...prev, ...trulyNew];
+      });
+      if (badgeXpGained > 0) {
+        setTimeout(() => awardXP(badgeXpGained), 0);
+      }
+
+      return { ...prevProfile, unlockedBadges: { ...prevProfile.unlockedBadges, ...newBadgeTiers } };
+    });
+  }, [quits, dayTick, habits, completions, setProfile, setNewlyUnlockedBadges, awardXP]);
+
+  const handleArchiveQuit = useCallback((quitId: string) => {
+    setQuits(prev => prev.map(q => q.id === quitId ? { ...q, isArchived: !q.isArchived } : q));
+  }, [setQuits]);
+
+  const handleDeleteQuit = useCallback((quit: Quit) => {
+    setQuitToDelete(quit);
+  }, []);
+
+  const confirmDeleteQuit = useCallback(() => {
+    if (quitToDelete) {
+      setQuits(prev => prev.filter(q => q.id !== quitToDelete.id));
+      setQuitToDelete(null);
+    }
+  }, [quitToDelete, setQuits]);
+
+  const cancelDeleteQuit = useCallback(() => {
+    setQuitToDelete(null);
+  }, []);
+
+  // --- Daily journal (mood + note per day) ---
+  const handleSaveDayNote = useCallback((dateKey: string, note: DayNote) => {
+    const isMeaningful = !!note.text?.trim() || !!note.mood;
+    setDayNotes(prev => {
+      const next = { ...prev };
+      if (!isMeaningful) {
+        delete next[dateKey];
+      } else {
+        next[dateKey] = { mood: note.mood, text: note.text?.trim() || undefined };
+      }
+      return next;
+    });
+    // Journal quests only count a real entry for today.
+    if (isMeaningful && dateKey === formatISO(new Date(), { representation: 'date' })) {
+      advanceQuestsOfType(QuestType.JOURNAL);
+    }
+  }, [setDayNotes, advanceQuestsOfType]);
 
   const handleUpdateSettings = useCallback((newSettings: PlayerSettings) => {
     setProfile(p => ({
@@ -738,6 +1125,20 @@ export const useGameLogic = () => {
     completions,
     profile,
     quests,
+    quits,
+    dayNotes,
+    handleAddQuit,
+    handleResistUrge,
+    handleTagLastUrge,
+    handleRelapse,
+    handleArchiveQuit,
+    handleDeleteQuit,
+    quitToDelete,
+    confirmDeleteQuit,
+    cancelDeleteQuit,
+    milestoneCelebration,
+    setMilestoneCelebration,
+    handleSaveDayNote,
     isAddHabitModalOpen,
     setIsAddHabitModalOpen,
     isSettingsModalOpen,
@@ -764,6 +1165,10 @@ export const useGameLogic = () => {
     requestNotificationPermission,
     handleSendTestNotification,
     testNotifMessage,
+    pushConfigured: !!PUSH_SERVER_URL,
+    pushEnabled,
+    handleTogglePush,
+    pushStatusMessage,
     viewingDate,
     goToPreviousDay,
     goToNextDay,
@@ -776,6 +1181,10 @@ export const useGameLogic = () => {
     importFileContent,
     autoBackupEnabled,
     setAutoBackupEnabled,
+    lastAutoBackupDate,
+    recoveryData,
+    confirmRecovery,
+    dismissRecovery,
     restoreConfirmation,
     handleConfirmRestoreAndReplace,
     handleConfirmRestoreAndKeep,

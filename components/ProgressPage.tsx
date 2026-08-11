@@ -1,5 +1,5 @@
 import React from 'react';
-import { Habit, Completion, PlayerProfile } from '../types';
+import { Habit, Completion, PlayerProfile, Quit, DayNote } from '../types';
 import StatCard from './StatCard';
 import WeeklyActivityChart from './WeeklyActivityChart';
 import CategoryDistributionChart from './CategoryDistributionChart';
@@ -7,14 +7,17 @@ import BadgeItem from './BadgeItem';
 import { BADGE_CATALOG } from '../utils/badges';
 import CompletionHeatmap from './CompletionHeatmap';
 import AnalyticsInsights from './AnalyticsInsights';
+import RecoverySection from './RecoverySection';
 
 interface ProgressPageProps {
   habits: Habit[];
   completions: Completion[];
   profile: PlayerProfile;
+  quits: Quit[];
+  dayNotes: { [dateKey: string]: DayNote };
 }
 
-const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profile }) => {
+const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profile, quits, dayNotes }) => {
   const totalCompletions = completions.filter(c => c.status === 'completed').length;
   const longestStreak = habits.reduce((max, habit) => Math.max(max, habit.streak), 0);
 
@@ -28,8 +31,12 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
       </div>
 
       <div className="space-y-8">
+        {(quits.length > 0 || Object.keys(dayNotes).length > 0) && (
+          <RecoverySection quits={quits} dayNotes={dayNotes} />
+        )}
+
         <AnalyticsInsights completions={completions} habits={habits} />
-        
+
         <div>
            <h3 className="text-xl text-white mb-4">Completion History</h3>
            <CompletionHeatmap completions={completions} />
@@ -43,13 +50,14 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
           <h2 className="text-2xl md:text-3xl text-[#f5b342] mb-6">Achievements</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {BADGE_CATALOG.map(badge => (
-              <BadgeItem 
-                key={badge.id} 
-                badge={badge} 
+              <BadgeItem
+                key={badge.id}
+                badge={badge}
                 unlockedTierNum={profile.unlockedBadges[badge.id] || 0}
                 profile={profile}
                 habits={habits}
                 completions={completions}
+                quits={quits}
               />
             ))}
           </div>

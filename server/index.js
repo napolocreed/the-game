@@ -47,37 +47,50 @@ async function initDb() {
       updated_at timestamptz not null default now()
     );
     create index if not exists idx_subscriptions_updated_at on subscriptions(updated_at desc);
+    alter table subscriptions add column if not exists tz text not null default 'UTC';
   `);
 }
 
-async function upsertSubscription({ subscription, reminders }) {
+async function upsertSubscription({ subscription, reminders, tz }) {
   const { endpoint, keys } = subscription || {};
   if (!endpoint || !keys?.p256dh || !keys?.auth) {
     throw new Error('Invalid subscription payload');
   }
   const r = Array.isArray(reminders) ? reminders : [];
+  const timezone = typeof tz === 'string' && isValidTimeZone(tz) ? tz : 'UTC';
   await pool.query(
     `
-    insert into subscriptions (endpoint, p256dh, auth, reminders)
-    values ($1, $2, $3, $4)
+    insert into subscriptions (endpoint, p256dh, auth, reminders, tz)
+    values ($1, $2, $3, $4, $5)
     on conflict (endpoint)
     do update set p256dh = excluded.p256dh,
                   auth = excluded.auth,
                   reminders = excluded.reminders,
+                  tz = excluded.tz,
                   updated_at = now()
     `,
-    [endpoint, keys.p256dh, keys.auth, JSON.stringify(r)]
+    [endpoint, keys.p256dh, keys.auth, JSON.stringify(r), timezone]
   );
 }
 
+function isValidTimeZone(tz) {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function getAllSubscriptions() {
-  const { rows } = await pool.query(`select endpoint, p256dh, auth, reminders from subscriptions`);
+  const { rows } = await pool.query(`select endpoint, p256dh, auth, reminders, tz from subscriptions`);
   return rows.map(r => ({
     subscription: {
       endpoint: r.endpoint,
       keys: { p256dh: r.p256dh, auth: r.auth }
     },
-    reminders: r.reminders || []
+    reminders: r.reminders || [],
+    tz: r.tz || 'UTC'
   }));
 }
 
@@ -88,8 +101,8 @@ async function removeSubscriptionByEndpoint(endpoint) {
 // ---------- routes ----------
 app.post('/subscribe', async (req, res) => {
   try {
-    const { subscription, reminders } = req.body || {};
-    await upsertSubscription({ subscription, reminders });
+    const { subscription, reminders, tz } = req.body || {};
+    await upsertSubscription({ subscription, reminders, tz });
     res.status(201).json({ message: 'Subscription saved.' });
   } catch (e) {
     console.error('subscribe error', e);
@@ -124,26 +137,51 @@ app.post('/send-test', async (req, res) => {
 // ---------- scheduler + catch-up ----------
 let lastCheck = new Date(Date.now() - 30 * 60 * 1000); // catch up 30 min at cold start
 
-function hhmm(d) {
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+const WEEKDAY_TO_NUM = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+const tzFormatters = new Map();
+
+function getTzFormatter(tz) {
+  if (!tzFormatters.has(tz)) {
+    tzFormatters.set(tz, new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    }));
+  }
+  return tzFormatters.get(tz);
 }
 
-function timesBetween(since, now) {
+// Returns entries like "3|08:30" (weekday|HH:mm) for every minute in [since, now],
+// expressed in the subscriber's own timezone. Reminder times are entered in the
+// user's local time, so comparing them against server-local time (UTC on most
+// hosts) fired reminders hours off — this is the fix.
+function timesBetweenInTz(since, now, tz) {
   const out = new Set();
+  const fmt = getTzFormatter(tz);
   for (let t = new Date(since); t <= now; t = new Date(t.getTime() + 60_000)) {
-    out.add(hhmm(t));
+    const parts = Object.fromEntries(fmt.formatToParts(t).map(p => [p.type, p.value]));
+    out.add(`${WEEKDAY_TO_NUM[parts.weekday]}|${parts.hour}:${parts.minute}`);
   }
   return out;
 }
 
 async function scanAndSendSince(since) {
   const now = new Date();
-  const windowTimes = timesBetween(since, now);
   const subs = await getAllSubscriptions();
 
   for (const sub of subs) {
+    let windowTimes;
+    try {
+      windowTimes = timesBetweenInTz(since, now, sub.tz);
+    } catch (e) {
+      windowTimes = timesBetweenInTz(since, now, 'UTC');
+    }
     for (const r of sub.reminders || []) {
-      if (windowTimes.has(r.time)) {
+      const days = Array.isArray(r.days) && r.days.length > 0 ? r.days : [0, 1, 2, 3, 4, 5, 6];
+      const isDue = days.some(day => windowTimes.has(`${day}|${r.time}`));
+      if (isDue) {
         const payload = JSON.stringify({
           title: 'The Game Reminder',
           body: r.name ? `Don't forget "${r.name}"` : 'Reminder time!'

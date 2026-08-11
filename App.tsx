@@ -10,11 +10,17 @@ import ProgressPage from './components/ProgressPage';
 import SettingsModal from './components/SettingsModal';
 import ConfirmModal from './components/ConfirmModal';
 import TimeNavigator from './components/TimeNavigator';
-import { isSameDay } from 'date-fns';
+import { isSameDay, formatISO } from 'date-fns';
 import CalendarView from './components/CalendarView';
 import DayDetailModal from './components/DayDetailModal';
 import RestoreConflictModal from './components/RestoreConflictModal';
-import { Habit } from './types';
+import QuitBoard from './components/QuitBoard';
+import QuitChips from './components/QuitChips';
+import AddQuitModal from './components/AddQuitModal';
+import UrgeModal from './components/UrgeModal';
+import RelapseModal from './components/RelapseModal';
+import MilestoneModal from './components/MilestoneModal';
+import { Habit, Quit } from './types';
 import * as serviceWorkerRegistration from './utils/serviceWorkerRegistration';
 import UpdateNotification from './components/UpdateNotification';
 
@@ -51,6 +57,20 @@ const App: React.FC = () => {
     completions,
     profile,
     quests,
+    quits,
+    dayNotes,
+    handleAddQuit,
+    handleResistUrge,
+    handleTagLastUrge,
+    handleRelapse,
+    handleArchiveQuit,
+    handleDeleteQuit,
+    quitToDelete,
+    confirmDeleteQuit,
+    cancelDeleteQuit,
+    milestoneCelebration,
+    setMilestoneCelebration,
+    handleSaveDayNote,
     isAddHabitModalOpen,
     setIsAddHabitModalOpen,
     isSettingsModalOpen,
@@ -77,6 +97,10 @@ const App: React.FC = () => {
     requestNotificationPermission,
     handleSendTestNotification,
     testNotifMessage,
+    pushConfigured,
+    pushEnabled,
+    handleTogglePush,
+    pushStatusMessage,
     viewingDate,
     goToPreviousDay,
     goToNextDay,
@@ -89,6 +113,10 @@ const App: React.FC = () => {
     importFileContent,
     autoBackupEnabled,
     setAutoBackupEnabled,
+    lastAutoBackupDate,
+    recoveryData,
+    confirmRecovery,
+    dismissRecovery,
     restoreConfirmation,
     handleConfirmRestoreAndReplace,
     handleConfirmRestoreAndKeep,
@@ -97,6 +125,9 @@ const App: React.FC = () => {
   } = useGameLogic();
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isAddQuitModalOpen, setIsAddQuitModalOpen] = useState(false);
+  const [urgeQuit, setUrgeQuit] = useState<Quit | null>(null);
+  const [relapseQuit, setRelapseQuit] = useState<Quit | null>(null);
 
   const activeHabits = habits.filter(h => !h.isArchived);
   
@@ -122,6 +153,7 @@ const App: React.FC = () => {
               onNext={goToNextDay}
               onToday={goToToday}
             />
+            <QuitChips quits={quits} onClick={() => setActiveTab('battles')} />
              { !isToday && !isViewingDateEditable && (
               <div className="text-center p-2 bg-yellow-900 border-y-2 border-yellow-700 text-yellow-200 text-sm mt-4">
                 Viewing a past day. Logging is disabled (48-hour limit).
@@ -157,10 +189,21 @@ const App: React.FC = () => {
             );
         }
         return <QuestBoard quests={quests} habits={activeHabits} />;
+      case 'battles':
+        return (
+          <QuitBoard
+            quits={quits}
+            onAddQuit={() => setIsAddQuitModalOpen(true)}
+            onResistUrge={setUrgeQuit}
+            onRelapse={setRelapseQuit}
+            onArchive={handleArchiveQuit}
+            onDelete={handleDeleteQuit}
+          />
+        );
       case 'calendar':
-        return <CalendarView habits={habits} completions={completions} onDayClick={handleDayClick} />;
+        return <CalendarView habits={habits} completions={completions} dayNotes={dayNotes} quits={quits} onDayClick={handleDayClick} />;
       case 'progress':
-        return <ProgressPage habits={habits} completions={completions} profile={profile} />;
+        return <ProgressPage habits={habits} completions={completions} profile={profile} quits={quits} dayNotes={dayNotes} />;
       default:
         return null;
     }
@@ -201,7 +244,7 @@ const App: React.FC = () => {
   const confirmModalContent = getConfirmModalContent();
 
   return (
-    <div className="min-h-screen bg-[#2c2121] text-[#f0e9d6] p-4 sm:p-6 md:p-8">
+    <div className="min-h-screen overflow-x-hidden bg-[#2c2121] text-[#f0e9d6] p-4 sm:p-6 md:p-8">
       <div className="max-w-4xl mx-auto">
         <Header profile={profile} onSettingsClick={() => setIsSettingsModalOpen(true)} />
         <main>
@@ -236,10 +279,15 @@ const App: React.FC = () => {
         onRequestPermission={requestNotificationPermission}
         onSendTestNotification={handleSendTestNotification}
         testNotifMessage={testNotifMessage}
+        pushConfigured={pushConfigured}
+        pushEnabled={pushEnabled}
+        onTogglePush={handleTogglePush}
+        pushStatusMessage={pushStatusMessage}
         onExportData={handleExportData}
         onImportData={handleImportFileSelect}
         autoBackupEnabled={autoBackupEnabled}
         onToggleAutoBackup={setAutoBackupEnabled}
+        lastAutoBackupDate={lastAutoBackupDate}
         onUpdateSettings={handleUpdateSettings}
        />
        {confirmModalContent && (
@@ -267,6 +315,21 @@ const App: React.FC = () => {
                 <p className="text-sm text-red-400 mt-2">This will permanently overwrite all your current data. This action cannot be undone.</p>
             </ConfirmModal>
        )}
+       {recoveryData && (
+            <ConfirmModal
+                isOpen={!!recoveryData}
+                onClose={dismissRecovery}
+                onConfirm={confirmRecovery}
+                title="Recover Your Data?"
+                confirmText="Recover"
+                confirmClass="bg-green-800 hover:bg-green-700 border-green-900 shadow-[4px_4px_0px_#052e16]"
+            >
+                <p>Your saved data appears to be empty, but a device backup was found{recoveryData.savedAt ? ` (from ${new Date(recoveryData.savedAt).toLocaleDateString()})` : ''}.</p>
+                <p className="text-sm text-green-300 mt-2">
+                    It contains {(recoveryData.habits?.length ?? 0)} habit(s) and {(recoveryData.completions?.length ?? 0)} log entries. Recover it now?
+                </p>
+            </ConfirmModal>
+       )}
        {restoreConfirmation && (
           <RestoreConflictModal
             isOpen={!!restoreConfirmation}
@@ -283,7 +346,48 @@ const App: React.FC = () => {
         date={selectedDate}
         habits={habits}
         completions={completions}
+        quits={quits}
+        dayNote={selectedDate ? dayNotes[formatISO(selectedDate, { representation: 'date' })] : undefined}
+        onSaveNote={handleSaveDayNote}
        />
+       <AddQuitModal
+        isOpen={isAddQuitModalOpen}
+        onClose={() => setIsAddQuitModalOpen(false)}
+        onAddQuit={handleAddQuit}
+       />
+       <UrgeModal
+        isOpen={!!urgeQuit}
+        quit={urgeQuit}
+        onClose={() => setUrgeQuit(null)}
+        onResisted={handleResistUrge}
+        onTagTrigger={handleTagLastUrge}
+       />
+       <RelapseModal
+        isOpen={!!relapseQuit}
+        quit={relapseQuit}
+        onClose={() => setRelapseQuit(null)}
+        onConfirm={(quitId, note, trigger) => {
+          handleRelapse(quitId, note, trigger);
+          setRelapseQuit(null);
+        }}
+       />
+       <MilestoneModal
+        celebration={milestoneCelebration}
+        onClose={() => setMilestoneCelebration(null)}
+       />
+       {quitToDelete && (
+           <ConfirmModal
+                isOpen={!!quitToDelete}
+                onClose={cancelDeleteQuit}
+                onConfirm={confirmDeleteQuit}
+                title="Delete This Boss Fight?"
+                confirmText="Delete"
+                confirmClass="bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]"
+           >
+                <p>Permanently delete "{quitToDelete.name}" and all its history?</p>
+                <p className="text-sm text-red-400 mt-2">This cannot be undone. If you just want a break, pause it instead.</p>
+           </ConfirmModal>
+       )}
        {showUpdateNotification && <UpdateNotification onUpdate={handleUpdate} />}
     </div>
   );

@@ -15,6 +15,10 @@ const QuestItem: React.FC<QuestItemProps> = ({ quest }) => {
     progressLabel = `${quest.progress} / ${quest.objective.target}`;
   } else if (quest.type === QuestType.STREAK) {
     progressLabel = `${quest.progress} / ${quest.objective.target} Day Streak`;
+  } else if (quest.type === QuestType.RESIST_URGE) {
+    progressLabel = `${quest.progress} / ${quest.objective.target} Urge${quest.objective.target > 1 ? 's' : ''} Resisted`;
+  } else if (quest.type === QuestType.JOURNAL) {
+    progressLabel = `${quest.progress} / ${quest.objective.target}`;
   }
 
   return (
