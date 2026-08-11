@@ -15,6 +15,7 @@ import CalendarView from './components/CalendarView';
 import DayDetailModal from './components/DayDetailModal';
 import RestoreConflictModal from './components/RestoreConflictModal';
 import QuitBoard from './components/QuitBoard';
+import QuitChips from './components/QuitChips';
 import AddQuitModal from './components/AddQuitModal';
 import UrgeModal from './components/UrgeModal';
 import RelapseModal from './components/RelapseModal';
@@ -60,6 +61,7 @@ const App: React.FC = () => {
     dayNotes,
     handleAddQuit,
     handleResistUrge,
+    handleTagLastUrge,
     handleRelapse,
     handleArchiveQuit,
     handleDeleteQuit,
@@ -151,6 +153,7 @@ const App: React.FC = () => {
               onNext={goToNextDay}
               onToday={goToToday}
             />
+            <QuitChips quits={quits} onClick={() => setActiveTab('battles')} />
              { !isToday && !isViewingDateEditable && (
               <div className="text-center p-2 bg-yellow-900 border-y-2 border-yellow-700 text-yellow-200 text-sm mt-4">
                 Viewing a past day. Logging is disabled (48-hour limit).
@@ -198,9 +201,9 @@ const App: React.FC = () => {
           />
         );
       case 'calendar':
-        return <CalendarView habits={habits} completions={completions} dayNotes={dayNotes} onDayClick={handleDayClick} />;
+        return <CalendarView habits={habits} completions={completions} dayNotes={dayNotes} quits={quits} onDayClick={handleDayClick} />;
       case 'progress':
-        return <ProgressPage habits={habits} completions={completions} profile={profile} />;
+        return <ProgressPage habits={habits} completions={completions} profile={profile} quits={quits} dayNotes={dayNotes} />;
       default:
         return null;
     }
@@ -343,6 +346,7 @@ const App: React.FC = () => {
         date={selectedDate}
         habits={habits}
         completions={completions}
+        quits={quits}
         dayNote={selectedDate ? dayNotes[formatISO(selectedDate, { representation: 'date' })] : undefined}
         onSaveNote={handleSaveDayNote}
        />
@@ -356,13 +360,14 @@ const App: React.FC = () => {
         quit={urgeQuit}
         onClose={() => setUrgeQuit(null)}
         onResisted={handleResistUrge}
+        onTagTrigger={handleTagLastUrge}
        />
        <RelapseModal
         isOpen={!!relapseQuit}
         quit={relapseQuit}
         onClose={() => setRelapseQuit(null)}
-        onConfirm={(quitId, note) => {
-          handleRelapse(quitId, note);
+        onConfirm={(quitId, note, trigger) => {
+          handleRelapse(quitId, note, trigger);
           setRelapseQuit(null);
         }}
        />

@@ -1,5 +1,6 @@
-import { Badge, PlayerProfile, Habit, Completion, CompletionStatus, HabitCategory, BadgeTier } from '../types';
+import { Badge, PlayerProfile, Habit, Completion, CompletionStatus, HabitCategory, BadgeTier, Quit } from '../types';
 import { differenceInCalendarDays, isSameDay, format } from 'date-fns';
+import { totalCleanDays } from './quits';
 
 // Import existing icons
 import { FirstStepIcon } from '../components/icons/FirstStepIcon';
@@ -21,6 +22,8 @@ import { LifestyleMasterIcon } from '../components/icons/LifestyleMasterIcon';
 import { HabitCollectorIcon } from '../components/icons/HabitCollectorIcon';
 import { GeneralistIcon } from '../components/icons/GeneralistIcon';
 import { ResilienceIcon } from '../components/icons/ResilienceIcon';
+import { SwordIcon } from '../components/icons/SwordIcon';
+import { ShieldIcon } from '../components/icons/ShieldIcon';
 
 
 const countCategoryCompletions = (completions: Completion[], category: HabitCategory) => {
@@ -252,6 +255,31 @@ export const BADGE_CATALOG: Badge[] = [
         return recoveredFailures.size;
     },
   },
+  // --- BOSS FIGHTS (recovery) ---
+  {
+    id: 'iron-will',
+    baseName: 'Iron Will',
+    icon: ShieldIcon,
+    tiers: [
+      { tier: 1, name: 'Iron Will (Bronze)', description: 'Ride out 5 urges with the breathing tool.', target: 5, xpReward: 75 },
+      { tier: 2, name: 'Iron Will (Silver)', description: 'Ride out 25 urges. The waves break on you now.', target: 25, xpReward: 200 },
+      { tier: 3, name: 'Iron Will (Gold)', description: 'Ride out 100 urges. Unshakeable.', target: 100, xpReward: 500 },
+    ],
+    getProgress: (p, h, c, quits = []) => quits.reduce((sum, q) => sum + q.urgesResisted, 0),
+  },
+  {
+    id: 'boss-slayer',
+    baseName: 'Boss Slayer',
+    icon: SwordIcon,
+    tiers: [
+      { tier: 1, name: 'Boss Slayer (Bronze)', description: 'Accumulate 7 total clean days across your boss fights.', target: 7, xpReward: 75 },
+      { tier: 2, name: 'Boss Slayer (Silver)', description: 'Accumulate 30 total clean days.', target: 30, xpReward: 200 },
+      { tier: 3, name: 'Boss Slayer (Gold)', description: 'Accumulate 90 total clean days.', target: 90, xpReward: 400 },
+      { tier: 4, name: 'Boss Slayer (Platinum)', description: 'Accumulate 365 total clean days. Legendary.', target: 365, xpReward: 1000 },
+    ],
+    getProgress: (p, h, c, quits = []) => quits.reduce((sum, q) => sum + totalCleanDays(q), 0),
+  },
+
   {
     id: 'perfectionist',
     baseName: 'Perfectionist',
@@ -280,12 +308,13 @@ export const checkAndUnlockBadges = (
   profile: PlayerProfile,
   habits: Habit[],
   completions: Completion[],
-  badgeCatalog: Badge[]
+  badgeCatalog: Badge[],
+  quits: Quit[] = []
 ): { newlyUnlocked: { badge: Badge; tier: BadgeTier }[] } => {
   const newlyUnlocked: { badge: Badge; tier: BadgeTier }[] = [];
 
   badgeCatalog.forEach(badge => {
-    const currentProgress = badge.getProgress(profile, habits, completions);
+    const currentProgress = badge.getProgress(profile, habits, completions, quits);
     const currentlyUnlockedTierNum = profile.unlockedBadges[badge.id] || 0;
 
     badge.tiers.forEach(tier => {

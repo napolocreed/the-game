@@ -70,3 +70,52 @@ export const dueMilestones = (quit: Quit, now: Date = new Date()): QuitMilestone
   const days = currentStreakDays(quit, now);
   return QUIT_MILESTONES.filter(m => days >= m.days && !quit.milestonesAwarded.includes(m.days));
 };
+
+// --- Triggers ---
+// A small fixed vocabulary keeps tagging one-tap and makes aggregation
+// meaningful ("Stress: 7" beats a pile of free-text variants).
+
+export const TRIGGER_OPTIONS = ['Stress', 'Boredom', 'Social', 'Habit spot', 'Fatigue', 'Emotions'] as const;
+
+export interface TriggerCount {
+  trigger: string;
+  count: number;
+}
+
+// Aggregates trigger tags across resisted urges and relapses.
+export const topTriggers = (quits: Quit[], limit = 3): TriggerCount[] => {
+  const counts = new Map<string, number>();
+  quits.forEach(quit => {
+    (quit.urgeLog || []).forEach(u => {
+      if (u.trigger) counts.set(u.trigger, (counts.get(u.trigger) || 0) + 1);
+    });
+    quit.relapses.forEach(r => {
+      if (r.trigger) counts.set(r.trigger, (counts.get(r.trigger) || 0) + 1);
+    });
+  });
+  return [...counts.entries()]
+    .map(([trigger, count]) => ({ trigger, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+};
+
+// Weekday (0-6, Sun-Sat) with the most urges + relapses, or null below a
+// minimum sample size (a "risky day" claim needs at least a little data).
+export const riskiestWeekday = (quits: Quit[], minEvents = 5): number | null => {
+  const counts = new Array(7).fill(0);
+  let total = 0;
+  quits.forEach(quit => {
+    (quit.urgeLog || []).forEach(u => { counts[new Date(u.date).getDay()]++; total++; });
+    quit.relapses.forEach(r => { counts[new Date(r.date).getDay()]++; total++; });
+  });
+  if (total < minEvents) return null;
+  const max = Math.max(...counts);
+  return counts.indexOf(max);
+};
+
+// Lifetime totals across all quits (archived included — history still counts).
+export const recoveryTotals = (quits: Quit[], now: Date = new Date()) => ({
+  cleanDays: quits.reduce((sum, q) => sum + totalCleanDays(q, now), 0),
+  urgesResisted: quits.reduce((sum, q) => sum + q.urgesResisted, 0),
+  moneySaved: quits.reduce((sum, q) => sum + (moneySaved(q, now) || 0), 0),
+});

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Quit } from '../types';
-import { bestStreakDays, totalCleanDays, currentStreakDays } from '../utils/quits';
+import { bestStreakDays, totalCleanDays, currentStreakDays, TRIGGER_OPTIONS } from '../utils/quits';
 import PixelatedButton from './PixelatedButton';
 
 interface RelapseModalProps {
   isOpen: boolean;
   quit: Quit | null;
   onClose: () => void;
-  onConfirm: (quitId: string, note: string) => void;
+  onConfirm: (quitId: string, note: string, trigger?: string) => void;
 }
 
 // Compassion is the whole point here: a slip is data, not a verdict. Nothing
@@ -15,6 +15,7 @@ interface RelapseModalProps {
 // "what triggered it?" turns the moment into something useful.
 const RelapseModal: React.FC<RelapseModalProps> = ({ isOpen, quit, onClose, onConfirm }) => {
   const [note, setNote] = useState('');
+  const [trigger, setTrigger] = useState<string | null>(null);
 
   if (!isOpen || !quit) return null;
 
@@ -23,12 +24,14 @@ const RelapseModal: React.FC<RelapseModalProps> = ({ isOpen, quit, onClose, onCo
 
   const handleClose = () => {
     setNote('');
+    setTrigger(null);
     onClose();
   };
 
   const handleConfirm = () => {
-    onConfirm(quit.id, note);
+    onConfirm(quit.id, note, trigger || undefined);
     setNote('');
+    setTrigger(null);
   };
 
   return (
@@ -58,6 +61,20 @@ const RelapseModal: React.FC<RelapseModalProps> = ({ isOpen, quit, onClose, onCo
         </div>
 
         <label className="block mb-2 text-sm uppercase text-[#b0a08f]">What triggered it? (optional)</label>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {TRIGGER_OPTIONS.map(t => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTrigger(trigger === t ? null : t)}
+              className={`px-2 py-1 text-xs border-2 transition-colors ${trigger === t
+                ? 'bg-[#f5b342] text-black border-[#f5b342]'
+                : 'bg-[#2c2121] border-[#6a5340] text-[#b0a08f] hover:border-[#8a6a4f]'}`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}

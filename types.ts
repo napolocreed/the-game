@@ -61,6 +61,8 @@ export interface TemplateHabit {
 export enum QuestType {
   COUNT = 'count',
   STREAK = 'streak',
+  RESIST_URGE = 'resist_urge', // ride out N urges with the breathing tool
+  JOURNAL = 'journal', // write a journal note for today
 }
 
 export interface Quest {
@@ -91,7 +93,7 @@ export interface Badge {
     baseName: string; // "Streak Master"
     icon: React.FC<React.SVGProps<SVGSVGElement>>;
     tiers: BadgeTier[];
-    getProgress: (profile: PlayerProfile, habits: Habit[], completions: Completion[]) => number;
+    getProgress: (profile: PlayerProfile, habits: Habit[], completions: Completion[], quits?: Quit[]) => number;
 }
 
 
@@ -102,7 +104,18 @@ export interface Badge {
 
 export interface Relapse {
   date: string; // ISO Date string
-  note?: string; // optional trigger/context note
+  note?: string; // optional context note
+  trigger?: string; // optional trigger tag (see TRIGGER_OPTIONS)
+}
+
+export interface UrgeEvent {
+  date: string; // ISO Date string
+  trigger?: string; // optional trigger tag
+}
+
+export interface SavingsGoal {
+  name: string; // what the saved money goes toward, e.g. "PS5"
+  price: number;
 }
 
 export interface Quit {
@@ -115,7 +128,10 @@ export interface Quit {
   urgesResisted: number; // lifetime count
   urgesTodayDate: string | null; // day key of the last resisted urge (for the daily XP cap)
   urgesToday: number;
+  urgeLog?: UrgeEvent[]; // dated urges (newer field; urgesResisted predates it)
+  motivation?: string; // the user's own "why I quit", shown while riding out an urge
   costPerDay?: number | null; // optional money saved per clean day
+  savingsGoal?: SavingsGoal | null; // optional concrete reward the savings go toward
   milestonesAwarded: number[]; // milestone day-counts already rewarded for the current streak
   isArchived?: boolean;
 }

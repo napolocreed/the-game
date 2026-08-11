@@ -405,13 +405,14 @@ export const useGameLogic = () => {
     const lastGeneratedStr = questsLastGenerated ? formatISO(new Date(questsLastGenerated), { representation: 'date' }) : null;
     const activeHabits = habits.filter(h => !h.isArchived);
 
-    if (lastGeneratedStr !== todayStr && activeHabits.length > 0) {
-      setQuests(generateDailyQuests(3, activeHabits));
+    const activeQuits = quits.filter(q => !q.isArchived);
+    if (lastGeneratedStr !== todayStr && (activeHabits.length > 0 || activeQuits.length > 0)) {
+      setQuests(generateDailyQuests(3, activeHabits, activeQuits));
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       setQuestsLastGenerated(today.toISOString());
     }
-  }, [questsLastGenerated, setQuests, setQuestsLastGenerated, habits]);
+  }, [questsLastGenerated, setQuests, setQuestsLastGenerated, habits, quits]);
 
   const handleAddHabit = useCallback((newHabitData: { 
       name: string; 
@@ -438,7 +439,7 @@ export const useGameLogic = () => {
     setHabits(updatedHabits);
 
     setProfile(prevProfile => {
-        const { newlyUnlocked } = checkAndUnlockBadges(prevProfile, updatedHabits, completions, BADGE_CATALOG);
+        const { newlyUnlocked } = checkAndUnlockBadges(prevProfile, updatedHabits, completions, BADGE_CATALOG, quits);
         if (newlyUnlocked.length > 0) {
             const unlockedForModal: { badge: Badge, tier: BadgeTier }[] = [];
             const newBadgeTiers: { [badgeId: string]: number } = {};
@@ -470,7 +471,7 @@ export const useGameLogic = () => {
         }
         return prevProfile;
     });
-  }, [habits, profile, completions, setHabits, setProfile, setNewlyUnlockedBadges, notificationPermission]);
+  }, [habits, profile, completions, quits, setHabits, setProfile, setNewlyUnlockedBadges, notificationPermission]);
   
   const handleReorderHabits = useCallback((draggedHabitId: string, targetHabitId: string) => {
     setHabits(prevHabits => {
@@ -592,7 +593,7 @@ export const useGameLogic = () => {
     setProfile(prevProfile => {
         let nextProfileState = { ...prevProfile };
         
-        const { newlyUnlocked } = checkAndUnlockBadges(nextProfileState, newHabitsForCalculation, newCompletions, BADGE_CATALOG);
+        const { newlyUnlocked } = checkAndUnlockBadges(nextProfileState, newHabitsForCalculation, newCompletions, BADGE_CATALOG, quits);
         if (newlyUnlocked.length > 0) {
             const unlockedForModal: { badge: Badge, tier: BadgeTier }[] = [];
             const newBadgeTiers: { [badgeId: string]: number } = {};
@@ -650,7 +651,7 @@ export const useGameLogic = () => {
 
         return nextProfileState;
     });
-  }, [habits, quests, completions, viewingDate, isViewingDateEditable, notificationPermission, setHabits, setCompletions, setQuests, setProfile, setNewlyUnlockedBadges]);
+  }, [habits, quests, quits, completions, viewingDate, isViewingDateEditable, notificationPermission, setHabits, setCompletions, setQuests, setProfile, setNewlyUnlockedBadges]);
 
 
   const handleCompleteHabit = useCallback((habitId: string) => {
@@ -901,7 +902,7 @@ export const useGameLogic = () => {
     });
   }, [notificationPermission, setProfile]);
 
-  const handleAddQuit = useCallback((data: { name: string; startDate: string; costPerDay: number | null }) => {
+  const handleAddQuit = useCallback((data: { name: string; startDate: string; costPerDay: number | null; motivation: string; savingsGoal: { name: string; price: number } | null }) => {
     const nowISO = formatISO(new Date());
     const newQuit: Quit = {
       id: crypto.randomUUID(),
@@ -913,7 +914,10 @@ export const useGameLogic = () => {
       urgesResisted: 0,
       urgesTodayDate: null,
       urgesToday: 0,
+      urgeLog: [],
+      motivation: data.motivation.trim() || undefined,
       costPerDay: data.costPerDay,
+      savingsGoal: data.savingsGoal,
       milestonesAwarded: [],
       isArchived: false,
     };
@@ -961,12 +965,39 @@ export const useGameLogic = () => {
     }
   }, [quits, dayTick, awardXP, setQuits, notificationPermission]);
 
+  // Advance daily quests of a non-habit kind (resisted urge, journal entry).
+  // Quest XP and the completion counter are granted here since these quests
+  // complete outside the habit-completion path.
+  const advanceQuestsOfType = useCallback((questType: QuestType) => {
+    let xpGained = 0;
+    let completedNow = 0;
+    let changed = false;
+    const updated = quests.map(quest => {
+      if (quest.type !== questType || quest.isCompleted) return quest;
+      changed = true;
+      const newProgress = Math.min(quest.progress + 1, quest.objective.target);
+      const isNowCompleted = newProgress >= quest.objective.target;
+      if (isNowCompleted) {
+        xpGained += quest.xpReward;
+        completedNow++;
+      }
+      return { ...quest, progress: newProgress, isCompleted: isNowCompleted };
+    });
+    if (!changed) return;
+    setQuests(updated);
+    awardXP(xpGained);
+    if (completedNow > 0) {
+      setProfile(p => ({ ...p, totalQuestsCompleted: (p.totalQuestsCompleted || 0) + completedNow }));
+    }
+  }, [quests, setQuests, awardXP, setProfile]);
+
   // Resisting an urge is a real victory and gets immediate XP (capped per day
   // per quit so the reward stays meaningful). Returns the XP granted.
   const handleResistUrge = useCallback((quitId: string): number => {
     const quit = quits.find(q => q.id === quitId);
     if (!quit) return 0;
 
+    const nowISO = formatISO(new Date());
     const todayKey = formatISO(new Date(), { representation: 'date' });
     const urgesToday = quit.urgesTodayDate === todayKey ? quit.urgesToday : 0;
     const xp = urgesToday < URGE_XP_DAILY_CAP ? URGE_RESIST_XP : 0;
@@ -976,22 +1007,74 @@ export const useGameLogic = () => {
       urgesResisted: q.urgesResisted + 1,
       urgesTodayDate: todayKey,
       urgesToday: urgesToday + 1,
+      urgeLog: [...(q.urgeLog || []), { date: nowISO }],
     } : q));
     awardXP(xp);
+    advanceQuestsOfType(QuestType.RESIST_URGE);
     return xp;
-  }, [quits, setQuits, awardXP]);
+  }, [quits, setQuits, awardXP, advanceQuestsOfType]);
+
+  // Tags the most recent resisted urge with a trigger (chosen on the victory
+  // screen, after the urge event itself was already recorded).
+  const handleTagLastUrge = useCallback((quitId: string, trigger: string) => {
+    setQuits(prev => prev.map(q => {
+      if (q.id !== quitId) return q;
+      const log = [...(q.urgeLog || [])];
+      if (log.length === 0) return q;
+      log[log.length - 1] = { ...log[log.length - 1], trigger };
+      return { ...q, urgeLog: log };
+    }));
+  }, [setQuits]);
 
   // A relapse resets the current streak but NEVER the history: best streak and
   // total clean days are permanent. Milestones re-arm for the comeback.
-  const handleRelapse = useCallback((quitId: string, note: string) => {
+  const handleRelapse = useCallback((quitId: string, note: string, trigger?: string) => {
     const nowISO = formatISO(new Date());
     setQuits(prev => prev.map(q => q.id === quitId ? {
       ...q,
-      relapses: [...q.relapses, { date: nowISO, note: note.trim() || undefined }],
+      relapses: [...q.relapses, { date: nowISO, note: note.trim() || undefined, trigger }],
       startDate: nowISO,
       milestonesAwarded: [],
     } : q));
   }, [setQuits]);
+
+  // Recovery badges (Iron Will, Boss Slayer) progress through quit activity,
+  // which never goes through the habit-completion badge checks — so run one here.
+  useEffect(() => {
+    if (quits.length === 0) return;
+    setProfile(prevProfile => {
+      const { newlyUnlocked } = checkAndUnlockBadges(prevProfile, habits, completions, BADGE_CATALOG, quits);
+      if (newlyUnlocked.length === 0) return prevProfile;
+
+      const unlockedForModal: { badge: Badge, tier: BadgeTier }[] = [];
+      const newBadgeTiers: { [badgeId: string]: number } = {};
+      let badgeXpGained = 0;
+
+      const unlocksByBadgeId = newlyUnlocked.reduce((acc, unlock) => {
+        if (!acc[unlock.badge.id] || unlock.tier.tier > acc[unlock.badge.id].tier.tier) {
+          acc[unlock.badge.id] = unlock;
+        }
+        return acc;
+      }, {} as Record<string, { badge: Badge; tier: BadgeTier }>);
+
+      Object.values(unlocksByBadgeId).forEach(({ badge, tier }) => {
+        unlockedForModal.push({ badge, tier });
+        newBadgeTiers[badge.id] = tier.tier;
+        badgeXpGained += tier.xpReward;
+      });
+
+      setNewlyUnlockedBadges(prev => {
+        const existingIds = new Set(prev.map(b => b.badge.id + b.tier.tier));
+        const trulyNew = unlockedForModal.filter(b => !existingIds.has(b.badge.id + b.tier.tier));
+        return [...prev, ...trulyNew];
+      });
+      if (badgeXpGained > 0) {
+        setTimeout(() => awardXP(badgeXpGained), 0);
+      }
+
+      return { ...prevProfile, unlockedBadges: { ...prevProfile.unlockedBadges, ...newBadgeTiers } };
+    });
+  }, [quits, dayTick, habits, completions, setProfile, setNewlyUnlockedBadges, awardXP]);
 
   const handleArchiveQuit = useCallback((quitId: string) => {
     setQuits(prev => prev.map(q => q.id === quitId ? { ...q, isArchived: !q.isArchived } : q));
@@ -1014,16 +1097,21 @@ export const useGameLogic = () => {
 
   // --- Daily journal (mood + note per day) ---
   const handleSaveDayNote = useCallback((dateKey: string, note: DayNote) => {
+    const isMeaningful = !!note.text?.trim() || !!note.mood;
     setDayNotes(prev => {
       const next = { ...prev };
-      if (!note.text?.trim() && !note.mood) {
+      if (!isMeaningful) {
         delete next[dateKey];
       } else {
         next[dateKey] = { mood: note.mood, text: note.text?.trim() || undefined };
       }
       return next;
     });
-  }, [setDayNotes]);
+    // Journal quests only count a real entry for today.
+    if (isMeaningful && dateKey === formatISO(new Date(), { representation: 'date' })) {
+      advanceQuestsOfType(QuestType.JOURNAL);
+    }
+  }, [setDayNotes, advanceQuestsOfType]);
 
   const handleUpdateSettings = useCallback((newSettings: PlayerSettings) => {
     setProfile(p => ({
@@ -1041,6 +1129,7 @@ export const useGameLogic = () => {
     dayNotes,
     handleAddQuit,
     handleResistUrge,
+    handleTagLastUrge,
     handleRelapse,
     handleArchiveQuit,
     handleDeleteQuit,

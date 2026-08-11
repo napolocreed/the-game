@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Habit, Completion, CompletionStatus, DayNote } from '../types';
+import { Habit, Completion, CompletionStatus, DayNote, Quit } from '../types';
 // Fix: Removed 'startOfMonth' and 'startOfWeek' from date-fns import as they are causing errors.
 import { format, formatISO, endOfMonth, endOfWeek, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns';
 
@@ -9,6 +9,7 @@ interface CalendarViewProps {
   habits: Habit[];
   completions: Completion[];
   dayNotes: { [dateKey: string]: DayNote };
+  quits: Quit[];
   onDayClick: (date: Date) => void;
 }
 
@@ -33,8 +34,13 @@ const CalendarDays: React.FC = () => {
   );
 };
 
-const CalendarView: React.FC<CalendarViewProps> = ({ habits, completions, dayNotes, onDayClick }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ habits, completions, dayNotes, quits, onDayClick }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  // Relapse days shown as 💥 so patterns can be spotted next to mood entries.
+  const relapseDayKeys = new Set(
+    quits.flatMap(q => q.relapses.map(r => formatISO(new Date(r.date), { representation: 'date' })))
+  );
 
   // Fix: Replaced startOfMonth from date-fns with manual date creation to resolve import error.
   const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -74,7 +80,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ habits, completions, dayNot
       <div className="grid grid-cols-7">
         {days.map(day => {
           const statuses = getStatusesForDay(day);
-          const note = dayNotes[formatISO(day, { representation: 'date' })];
+          const dayKey = formatISO(day, { representation: 'date' });
+          const note = dayNotes[dayKey];
+          const hadRelapse = relapseDayKeys.has(dayKey);
           const dotColors = {
               [CompletionStatus.COMPLETED]: 'bg-green-500',
               [CompletionStatus.FAILED]: 'bg-orange-500',
@@ -93,11 +101,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({ habits, completions, dayNot
                 <span className={`text-xs ${isToday(day) ? 'text-yellow-400' : 'text-white'}`}>
                   {format(day, 'd')}
                 </span>
-                {note && (
-                  <span className="text-[10px] leading-none" title={note.text}>
-                    {note.mood ? MOOD_EMOJIS[note.mood] : '📝'}
-                  </span>
-                )}
+                <span className="text-[10px] leading-none">
+                  {hadRelapse && <span title="Relapse logged this day">💥</span>}
+                  {note && <span title={note.text}>{note.mood ? MOOD_EMOJIS[note.mood] : '📝'}</span>}
+                </span>
               </div>
               <div className="flex flex-wrap gap-1 mt-1">
                  {statuses.map(status => (

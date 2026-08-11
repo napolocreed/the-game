@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Habit, Completion, CompletionStatus, DayNote } from '../types';
+import { Habit, Completion, CompletionStatus, DayNote, Quit } from '../types';
 import { format, formatISO, isSameDay } from 'date-fns';
 import PixelatedButton from './PixelatedButton';
 
@@ -9,6 +9,7 @@ interface DayDetailModalProps {
   date: Date | null;
   habits: Habit[];
   completions: Completion[];
+  quits: Quit[];
   dayNote?: DayNote;
   onSaveNote: (dateKey: string, note: DayNote) => void;
 }
@@ -32,7 +33,7 @@ const StatusIndicator: React.FC<{ status: CompletionStatus | 'pending' }> = ({ s
     return <span className={`px-2 py-0.5 text-xs text-white ${color}`}>{text}</span>;
 };
 
-const DayDetailModal: React.FC<DayDetailModalProps> = ({ isOpen, onClose, date, habits, completions, dayNote, onSaveNote }) => {
+const DayDetailModal: React.FC<DayDetailModalProps> = ({ isOpen, onClose, date, habits, completions, quits, dayNote, onSaveNote }) => {
   const [mood, setMood] = useState<number | undefined>(undefined);
   const [text, setText] = useState('');
   const [saved, setSaved] = useState(false);
@@ -73,6 +74,20 @@ const DayDetailModal: React.FC<DayDetailModalProps> = ({ isOpen, onClose, date, 
           <button onClick={onClose} className="text-3xl text-[#f0e9d6] hover:text-red-500 leading-none">&times;</button>
         </div>
         <div className="overflow-y-auto pr-2">
+            {quits.some(q => q.relapses.some(r => isSameDay(new Date(r.date), date!))) && (
+                <div className="mb-4 space-y-2">
+                    {quits.flatMap(q => q.relapses
+                        .filter(r => isSameDay(new Date(r.date), date!))
+                        .map((r, i) => (
+                            <div key={q.id + i} className="p-3 bg-[#2c2121] border-2 border-red-900 text-xs text-[#b0a08f]">
+                                <span className="text-red-400">💥 Slip logged — {q.name}</span>
+                                {r.trigger && <span className="ml-2 text-amber-300">[{r.trigger}]</span>}
+                                {r.note && <p className="mt-1 italic">"{r.note}"</p>}
+                            </div>
+                        ))
+                    )}
+                </div>
+            )}
             {scheduledHabits.length > 0 ? (
                  <ul className="space-y-3">
                     {scheduledHabits.map(habit => (

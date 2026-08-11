@@ -7,10 +7,14 @@ Une PWA de suivi d'habitudes gamifiée, au look pixel art : chaque bonne habitud
 - **Habitudes planifiables** : catégories, difficulté, jours de la semaine, heure de rappel, archivage, duplication, réorganisation par glisser-déposer.
 - **⚔️ Boss Fights (sevrage & addictions)** : chaque chose à arrêter devient un boss à combattre.
   - Compteur de jours clean avec paliers récompensés en XP (1 j, 3 j, 1 semaine… 2 ans), antidatage possible si vous êtes déjà clean depuis un moment.
+  - **Battle plan** : votre « pourquoi j'arrête » personnel, réaffiché en plein craving — au moment où la motivation est au plus bas.
   - Bouton **« I have an urge »** : outil de *urge surfing* — respiration guidée ~90 s pour laisser passer le craving, avec XP à la clé (les envies résistées comptent).
-  - **Rechute compatissante** : un écart remet le compteur courant à zéro mais ne retire jamais le meilleur streak, les jours clean cumulés ni l'argent économisé. Une note optionnelle aide à identifier le déclencheur.
-  - Argent économisé calculé si vous renseignez un coût/jour.
+  - **Déclencheurs** : tags rapides (stress, ennui, social…) sur les envies résistées et les rechutes → le « battle log » de chaque boss révèle votre déclencheur n°1.
+  - **Rechute compatissante** : un écart remet le compteur courant à zéro mais ne retire jamais le meilleur streak, les jours clean cumulés ni l'argent économisé. Les rechutes apparaissent (💥) dans le calendrier, à croiser avec l'humeur.
+  - Argent économisé calculé si vous renseignez un coût/jour, avec **objectif d'achat** optionnel (« cet argent paie ma guitare : 110/300 € »).
 - **📝 Journal de bord** : humeur (1–5) et note libre sur chaque jour du calendrier — utile pour repérer les patterns et les déclencheurs.
+- **📊 Analytique Recovery** (onglet Progress) : tendance d'humeur sur 30 jours avec les rechutes en regard, top déclencheurs, jour de la semaine le plus à risque, totaux (jours clean, envies résistées, argent économisé).
+- **Quêtes & badges de récupération** : quêtes quotidiennes « Wave Rider » (résister à une envie) et « Dear Diary » (journal), badges « Iron Will » (envies résistées) et « Boss Slayer » (jours clean cumulés).
 - **Gamification** : XP et niveaux, quêtes quotidiennes générées selon vos habitudes, badges à paliers (bronze/argent/or…).
 - **Compassion intégrée** : statuts « fait / raté / passé » avec impact différencié sur les séries, fenêtre de 48 h pour rattraper un oubli.
 - **Analytique** : heatmap façon GitHub, graphiques hebdo, répartition par catégorie, insights personnels, vue calendrier.

@@ -5,13 +5,16 @@ import { formatISO } from 'date-fns';
 interface AddQuitModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddQuit: (data: { name: string; startDate: string; costPerDay: number | null }) => void;
+  onAddQuit: (data: { name: string; startDate: string; costPerDay: number | null; motivation: string; savingsGoal: { name: string; price: number } | null }) => void;
 }
 
 const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit }) => {
   const [name, setName] = useState('');
   const [sinceDate, setSinceDate] = useState('');
   const [costPerDay, setCostPerDay] = useState('');
+  const [motivation, setMotivation] = useState('');
+  const [goalName, setGoalName] = useState('');
+  const [goalPrice, setGoalPrice] = useState('');
 
   if (!isOpen) return null;
 
@@ -21,6 +24,9 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
     setName('');
     setSinceDate('');
     setCostPerDay('');
+    setMotivation('');
+    setGoalName('');
+    setGoalPrice('');
     onClose();
   };
 
@@ -39,10 +45,17 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
     }
 
     const cost = parseFloat(costPerDay.replace(',', '.'));
+    const price = parseFloat(goalPrice.replace(',', '.'));
+    const savingsGoal = goalName.trim() && !Number.isNaN(price) && price > 0
+      ? { name: goalName.trim(), price }
+      : null;
+
     onAddQuit({
       name: name.trim(),
       startDate,
       costPerDay: !Number.isNaN(cost) && cost > 0 ? cost : null,
+      motivation,
+      savingsGoal,
     });
     handleClose();
   };
@@ -81,6 +94,18 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
           </div>
 
           <div>
+            <label className="block mb-2 text-sm uppercase">Why are you quitting? (optional)</label>
+            <textarea
+              value={motivation}
+              onChange={(e) => setMotivation(e.target.value)}
+              rows={2}
+              placeholder="Your own words. e.g. To breathe better, for my family, to be free..."
+              className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] text-sm placeholder:text-[#6a5340]"
+            />
+            <p className="text-xs text-amber-300 mt-1">Shown to you in the middle of an urge — when it matters most.</p>
+          </div>
+
+          <div>
             <label className="block mb-2 text-sm uppercase">Cost per day in € (optional)</label>
             <input
               type="text"
@@ -92,6 +117,30 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
             />
             <p className="text-xs text-amber-300 mt-1">Shows how much money you've saved since quitting.</p>
           </div>
+
+          {costPerDay.trim() !== '' && (
+            <div>
+              <label className="block mb-2 text-sm uppercase">🎁 Reward goal (optional)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={goalName}
+                  onChange={(e) => setGoalName(e.target.value)}
+                  placeholder="Treat yourself to..."
+                  className="flex-1 min-w-0 p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] placeholder:text-[#6a5340]"
+                />
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={goalPrice}
+                  onChange={(e) => setGoalPrice(e.target.value)}
+                  placeholder="Price €"
+                  className="w-24 p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] placeholder:text-[#6a5340]"
+                />
+              </div>
+              <p className="text-xs text-amber-300 mt-1">Something concrete your saved money is buying you.</p>
+            </div>
+          )}
 
           <div className="flex justify-end pt-2">
             <PixelatedButton type="submit" disabled={!name.trim()}>
