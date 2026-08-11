@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Press Start 2P', cursive;
+  background-color: #2c2121;
+  color: #f0e9d6;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Custom scrollbar for a retro feel */
+::-webkit-scrollbar {
+  width: 12px;
+  background-color: #2c2121;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #8a6a4f;
+  border: 2px solid #2c2121;
+}
+::-webkit-scrollbar-track {
+  background-color: #4a3f36;
+}

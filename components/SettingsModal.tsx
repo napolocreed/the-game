@@ -18,10 +18,15 @@ interface SettingsModalProps {
   onRequestPermission: () => void;
   onSendTestNotification: () => void;
   testNotifMessage: string;
+  pushConfigured: boolean;
+  pushEnabled: boolean;
+  onTogglePush: (enabled: boolean) => void;
+  pushStatusMessage: string;
   onExportData: () => void;
   onImportData: (event: React.ChangeEvent<HTMLInputElement>) => void;
   autoBackupEnabled: boolean;
   onToggleAutoBackup: (enabled: boolean) => void;
+  lastAutoBackupDate: string | null;
   onUpdateSettings: (settings: PlayerSettings) => void;
 }
 
@@ -32,7 +37,7 @@ const ToggleSwitch: React.FC<{ checked: boolean; onChange: (checked: boolean) =>
   </label>
 );
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile, habits, onRestore, onDelete, notificationPermission, onRequestPermission, onSendTestNotification, testNotifMessage, onExportData, onImportData, autoBackupEnabled, onToggleAutoBackup, onUpdateSettings }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile, habits, onRestore, onDelete, notificationPermission, onRequestPermission, onSendTestNotification, testNotifMessage, pushConfigured, pushEnabled, onTogglePush, pushStatusMessage, onExportData, onImportData, autoBackupEnabled, onToggleAutoBackup, lastAutoBackupDate, onUpdateSettings }) => {
   const importInputRef = useRef<HTMLInputElement>(null);
   
   if (!isOpen) return null;
@@ -101,11 +106,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile,
                         {notificationPermission === 'denied' && <p className="text-red-400 font-bold">Blocked</p>}
                     </div>
                     {notificationPermission === 'granted' && (
-                        <div className="mt-4 pt-4 border-t-2 border-[#4a3f36]">
-                            <PixelatedButton onClick={onSendTestNotification} disabled={!!testNotifMessage} className="text-sm">
-                                Send Test Notification
-                            </PixelatedButton>
-                            {testNotifMessage && <p className="text-xs text-amber-300 mt-2">{testNotifMessage}</p>}
+                        <div className="mt-4 pt-4 border-t-2 border-[#4a3f36] space-y-4">
+                            <p className="text-xs text-[#b0a08f]">Reminders fire while the app is open. Add a reminder time to a habit to use them.</p>
+                            {pushConfigured && (
+                                <div>
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-[#b0a08f]">Push (app closed)</p>
+                                        <ToggleSwitch checked={pushEnabled} onChange={onTogglePush} />
+                                    </div>
+                                    {pushStatusMessage && <p className="text-xs text-amber-300 mt-2">{pushStatusMessage}</p>}
+                                </div>
+                            )}
+                            <div>
+                                <PixelatedButton onClick={onSendTestNotification} disabled={!!testNotifMessage} className="text-sm">
+                                    Send Test Notification
+                                </PixelatedButton>
+                                {testNotifMessage && <p className="text-xs text-amber-300 mt-2">{testNotifMessage}</p>}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -137,7 +154,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile,
                     <p className="text-[#b0a08f]">Enable weekly auto-backups</p>
                     <ToggleSwitch checked={autoBackupEnabled} onChange={onToggleAutoBackup} />
                   </div>
-                  <p className="text-xs text-amber-300 mt-1">Automatically saves a weekly snapshot to local storage.</p>
+                  <p className="text-xs text-amber-300 mt-1">
+                    Saves a weekly snapshot on this device (survives cleared site data in most cases).
+                    {lastAutoBackupDate && ` Last: ${new Date(lastAutoBackupDate).toLocaleDateString()}`}
+                  </p>
                 </div>
               </div>
               <p className="text-xs text-amber-300 mt-2">Manual backups are recommended. Importing data will overwrite your current progress.</p>

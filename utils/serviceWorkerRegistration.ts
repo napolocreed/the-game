@@ -13,15 +13,26 @@ type Config = {
 
 export function register(config?: Config) {
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      const swUrl = `/sw.js`;
+    const doRegister = () => {
+      // Resolve against the app's base path so it works on sub-path deploys
+      // (e.g. GitHub Pages at /the-game/).
+      const swUrl = `${import.meta.env.BASE_URL}sw.js`;
 
       if (isLocalhost) {
         checkValidServiceWorker(swUrl, config);
       } else {
         registerValidSW(swUrl, config);
       }
-    });
+    };
+
+    // This is called from a React effect, which can run after the window 'load'
+    // event has already fired — in that case a 'load' listener would never fire
+    // and the service worker would silently never register.
+    if (document.readyState === 'complete') {
+      doRegister();
+    } else {
+      window.addEventListener('load', doRegister);
+    }
   }
 }
 

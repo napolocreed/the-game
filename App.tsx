@@ -77,6 +77,10 @@ const App: React.FC = () => {
     requestNotificationPermission,
     handleSendTestNotification,
     testNotifMessage,
+    pushConfigured,
+    pushEnabled,
+    handleTogglePush,
+    pushStatusMessage,
     viewingDate,
     goToPreviousDay,
     goToNextDay,
@@ -89,6 +93,10 @@ const App: React.FC = () => {
     importFileContent,
     autoBackupEnabled,
     setAutoBackupEnabled,
+    lastAutoBackupDate,
+    recoveryData,
+    confirmRecovery,
+    dismissRecovery,
     restoreConfirmation,
     handleConfirmRestoreAndReplace,
     handleConfirmRestoreAndKeep,
@@ -236,10 +244,15 @@ const App: React.FC = () => {
         onRequestPermission={requestNotificationPermission}
         onSendTestNotification={handleSendTestNotification}
         testNotifMessage={testNotifMessage}
+        pushConfigured={pushConfigured}
+        pushEnabled={pushEnabled}
+        onTogglePush={handleTogglePush}
+        pushStatusMessage={pushStatusMessage}
         onExportData={handleExportData}
         onImportData={handleImportFileSelect}
         autoBackupEnabled={autoBackupEnabled}
         onToggleAutoBackup={setAutoBackupEnabled}
+        lastAutoBackupDate={lastAutoBackupDate}
         onUpdateSettings={handleUpdateSettings}
        />
        {confirmModalContent && (
@@ -265,6 +278,21 @@ const App: React.FC = () => {
             >
                 <p>Are you sure you want to restore from this backup?</p>
                 <p className="text-sm text-red-400 mt-2">This will permanently overwrite all your current data. This action cannot be undone.</p>
+            </ConfirmModal>
+       )}
+       {recoveryData && (
+            <ConfirmModal
+                isOpen={!!recoveryData}
+                onClose={dismissRecovery}
+                onConfirm={confirmRecovery}
+                title="Recover Your Data?"
+                confirmText="Recover"
+                confirmClass="bg-green-800 hover:bg-green-700 border-green-900 shadow-[4px_4px_0px_#052e16]"
+            >
+                <p>Your saved data appears to be empty, but a device backup was found{recoveryData.savedAt ? ` (from ${new Date(recoveryData.savedAt).toLocaleDateString()})` : ''}.</p>
+                <p className="text-sm text-green-300 mt-2">
+                    It contains {(recoveryData.habits?.length ?? 0)} habit(s) and {(recoveryData.completions?.length ?? 0)} log entries. Recover it now?
+                </p>
             </ConfirmModal>
        )}
        {restoreConfirmation && (

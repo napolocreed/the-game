@@ -1,3 +1,5 @@
+import type React from 'react';
+
 export enum HabitType {
   BUILD = 'build',
   REDUCE = 'reduce',
