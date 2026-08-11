@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Habit, PlayerProfile, Quest, Badge, Completion, CompletionStatus, HabitCategory, HabitType, QuestType, BadgeTier, PlayerSettings } from '../types';
+import { Habit, PlayerProfile, Quest, Badge, Completion, CompletionStatus, HabitCategory, HabitType, QuestType, BadgeTier, PlayerSettings, Quit, DayNote } from '../types';
 import { useLocalStorage } from './useLocalStorage';
 // Fix: Removed 'subDays' from date-fns import as it is causing an error.
 import { formatISO, differenceInCalendarDays, isSameDay } from 'date-fns';
@@ -8,6 +8,7 @@ import { generateDailyQuests } from '../utils/quests';
 import { BADGE_CATALOG, checkAndUnlockBadges } from '../utils/badges';
 import { showAppNotification } from '../utils/notifications';
 import { GameSnapshot, saveMirror, loadMirror, addSnapshot, getLatestSnapshot, requestPersistentStorage } from '../utils/db';
+import { QUIT_MILESTONES, URGE_RESIST_XP, URGE_XP_DAILY_CAP, dueMilestones } from '../utils/quits';
 
 // --- Push Notification Server ---
 // Optional: set VITE_PUSH_SERVER_URL (e.g. in .env.local or on your host) to enable
@@ -45,6 +46,8 @@ export const useGameLogic = () => {
     },
   });
   const [quests, setQuests] = useLocalStorage<Quest[]>('quests', []);
+  const [quits, setQuits] = useLocalStorage<Quit[]>('quits', []);
+  const [dayNotes, setDayNotes] = useLocalStorage<{ [dateKey: string]: DayNote }>('dayNotes', {});
   const [questsLastGenerated, setQuestsLastGenerated] = useLocalStorage<string | null>('questsLastGenerated', null);
   const [autoBackupEnabled, setAutoBackupEnabled] = useLocalStorage<boolean>('autoBackupEnabled', true);
   const [lastAutoBackupDate, setLastAutoBackupDate] = useLocalStorage<string | null>('lastAutoBackupDate', null);
@@ -53,9 +56,11 @@ export const useGameLogic = () => {
   const [isAddHabitModalOpen, setIsAddHabitModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [newlyUnlockedBadges, setNewlyUnlockedBadges] = useState<{ badge: Badge, tier: BadgeTier }[]>([]);
-  const [activeTab, setActiveTab] = useState<'habits' | 'quests' | 'progress' | 'calendar'>('habits');
-  
+  const [activeTab, setActiveTab] = useState<'habits' | 'quests' | 'battles' | 'progress' | 'calendar'>('habits');
+
   const [habitToConfirmAction, setHabitToConfirmAction] = useState<{habit: Habit, action: 'archive' | 'delete'} | null>(null);
+  const [quitToDelete, setQuitToDelete] = useState<Quit | null>(null);
+  const [milestoneCelebration, setMilestoneCelebration] = useState<{ quitName: string; days: number; label: string; xp: number } | null>(null);
   const [habitToDuplicate, setHabitToDuplicate] = useState<Habit | null>(null);
   const [notificationPermission, setNotificationPermission] = useState('Notification' in window ? Notification.permission : 'denied');
   
@@ -125,7 +130,7 @@ export const useGameLogic = () => {
       }
   }, [habits, profile, setHabits, setProfile]); 
 
-  const hasMeaningfulData = habits.length > 0 || completions.length > 0 || profile.totalXP > 0;
+  const hasMeaningfulData = habits.length > 0 || completions.length > 0 || quits.length > 0 || profile.totalXP > 0;
 
   // Ask the browser to protect this origin's storage from eviction (best effort).
   useEffect(() => {
@@ -147,7 +152,7 @@ export const useGameLogic = () => {
 
     (async () => {
       const mirror = (await loadMirror()) || (await getLatestSnapshot());
-      if (mirror && ((mirror.habits?.length ?? 0) > 0 || (mirror.completions?.length ?? 0) > 0)) {
+      if (mirror && ((mirror.habits?.length ?? 0) > 0 || (mirror.completions?.length ?? 0) > 0 || (mirror.quits?.length ?? 0) > 0)) {
         setRecoveryData(mirror);
       }
     })();
@@ -163,6 +168,8 @@ export const useGameLogic = () => {
       unlockedBadges: {}, totalQuestsCompleted: 0, settings: { dailyHabitLimit: null },
     });
     setQuests((recoveryData.quests as Quest[]) || []);
+    setQuits((recoveryData.quits as Quit[]) || []);
+    setDayNotes((recoveryData.dayNotes as { [dateKey: string]: DayNote }) || {});
     setQuestsLastGenerated(recoveryData.questsLastGenerated || null);
     setRecoveryData(null);
   }, [recoveryData, setHabits, setCompletions, setProfile, setQuests, setQuestsLastGenerated]);
@@ -176,10 +183,10 @@ export const useGameLogic = () => {
   useEffect(() => {
     if (!hasMeaningfulData) return;
     const timeout = window.setTimeout(() => {
-      saveMirror({ habits, completions, profile, quests, questsLastGenerated, savedAt: new Date().toISOString() });
+      saveMirror({ habits, completions, profile, quests, quits, dayNotes, questsLastGenerated, savedAt: new Date().toISOString() });
     }, 1000);
     return () => window.clearTimeout(timeout);
-  }, [habits, completions, profile, quests, questsLastGenerated, hasMeaningfulData]);
+  }, [habits, completions, profile, quests, quits, dayNotes, questsLastGenerated, hasMeaningfulData]);
 
   // Weekly snapshot history in IndexedDB (keeps the last 8).
   useEffect(() => {
@@ -187,7 +194,7 @@ export const useGameLogic = () => {
 
     const performAutoBackup = () => {
       console.log("Performing weekly auto-backup snapshot...");
-      addSnapshot({ habits, completions, profile, quests, questsLastGenerated, savedAt: new Date().toISOString() });
+      addSnapshot({ habits, completions, profile, quests, quits, dayNotes, questsLastGenerated, savedAt: new Date().toISOString() });
       setLastAutoBackupDate(new Date().toISOString());
     };
 
@@ -795,13 +802,15 @@ export const useGameLogic = () => {
 
   const handleExportData = useCallback(() => {
     const backupData = {
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       data: {
         habits,
         completions,
         profile,
         quests,
+        quits,
+        dayNotes,
         questsLastGenerated,
       }
     };
@@ -816,7 +825,7 @@ export const useGameLogic = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(href);
-  }, [habits, completions, profile, quests, questsLastGenerated]);
+  }, [habits, completions, profile, quests, quits, dayNotes, questsLastGenerated]);
 
   const handleImportFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -851,6 +860,8 @@ export const useGameLogic = () => {
       setCompletions(parsedData.completions || []);
       setProfile(parsedData.profile || { level: 1, totalXP: 0, currentXP: 0, xpToNextLevel: calculateXpToNextLevel(1), unlockedBadges: {} });
       setQuests(parsedData.quests || []);
+      setQuits(parsedData.quits || []); // absent from v1 backups → empty
+      setDayNotes(parsedData.dayNotes || {});
       setQuestsLastGenerated(parsedData.questsLastGenerated || null);
       setImportFileContent(null);
       alert('Data restored successfully! The app will now reload.');
@@ -860,11 +871,159 @@ export const useGameLogic = () => {
       console.error("Restore error:", error);
       setImportFileContent(null);
     }
-  }, [importFileContent, setHabits, setCompletions, setProfile, setQuests, setQuestsLastGenerated]);
+  }, [importFileContent, setHabits, setCompletions, setProfile, setQuests, setQuits, setDayNotes, setQuestsLastGenerated]);
 
   const cancelImport = useCallback(() => {
     setImportFileContent(null);
   }, []);
+
+  // --- Recovery / "Boss Fights" logic ---
+
+  // Shared XP awarding with level-up handling (used by quit milestones and resisted urges).
+  const awardXP = useCallback((amount: number) => {
+    if (amount <= 0) return;
+    setProfile(prev => {
+      let newCurrentXP = prev.currentXP + amount;
+      const newTotalXP = prev.totalXP + amount;
+      let newLevel = prev.level;
+      let newXpToNextLevel = prev.xpToNextLevel;
+      let leveledUp = false;
+      while (newCurrentXP >= newXpToNextLevel) {
+        newLevel += 1;
+        leveledUp = true;
+        newCurrentXP -= newXpToNextLevel;
+        newXpToNextLevel = calculateXpToNextLevel(newLevel);
+      }
+      if (leveledUp && notificationPermission === 'granted') {
+        showAppNotification('Level Up!', `You've reached Level ${newLevel}! Keep up the great work!`);
+      }
+      return { ...prev, level: newLevel, totalXP: newTotalXP, currentXP: newCurrentXP, xpToNextLevel: newXpToNextLevel };
+    });
+  }, [notificationPermission, setProfile]);
+
+  const handleAddQuit = useCallback((data: { name: string; startDate: string; costPerDay: number | null }) => {
+    const nowISO = formatISO(new Date());
+    const newQuit: Quit = {
+      id: crypto.randomUUID(),
+      name: data.name,
+      createdAt: nowISO,
+      firstStartDate: data.startDate,
+      startDate: data.startDate,
+      relapses: [],
+      urgesResisted: 0,
+      urgesTodayDate: null,
+      urgesToday: 0,
+      costPerDay: data.costPerDay,
+      milestonesAwarded: [],
+      isArchived: false,
+    };
+    setQuits(prev => [...prev, newQuit]);
+  }, [setQuits]);
+
+  // Milestone rewards: whenever a quit's current streak crosses milestones that
+  // haven't been rewarded yet, grant the XP and celebrate. Runs when quits
+  // change and periodically so day boundaries are caught while the app is open.
+  // Backdated quits get their earned milestones immediately — that progress is real.
+  const [dayTick, setDayTick] = useState(() => formatISO(new Date(), { representation: 'date' }));
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setDayTick(formatISO(new Date(), { representation: 'date' }));
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    let totalXp = 0;
+    let celebration: { quitName: string; days: number; label: string; xp: number } | null = null;
+    const updates = new Map<string, number[]>();
+
+    quits.forEach(quit => {
+      const due = dueMilestones(quit);
+      if (due.length === 0) return;
+      const xpForQuit = due.reduce((sum, m) => sum + m.xp, 0);
+      totalXp += xpForQuit;
+      updates.set(quit.id, due.map(m => m.days));
+      const top = due[due.length - 1];
+      celebration = { quitName: quit.name, days: top.days, label: top.label, xp: xpForQuit };
+    });
+
+    if (updates.size === 0) return;
+
+    setQuits(prev => prev.map(q => {
+      const awarded = updates.get(q.id);
+      return awarded ? { ...q, milestonesAwarded: [...q.milestonesAwarded, ...awarded] } : q;
+    }));
+    awardXP(totalXp);
+    setMilestoneCelebration(celebration);
+    if (celebration && notificationPermission === 'granted') {
+      const c = celebration as { quitName: string; days: number; label: string; xp: number };
+      showAppNotification('Milestone reached! ⚔️', `${c.label} clean from "${c.quitName}"! +${c.xp} XP`);
+    }
+  }, [quits, dayTick, awardXP, setQuits, notificationPermission]);
+
+  // Resisting an urge is a real victory and gets immediate XP (capped per day
+  // per quit so the reward stays meaningful). Returns the XP granted.
+  const handleResistUrge = useCallback((quitId: string): number => {
+    const quit = quits.find(q => q.id === quitId);
+    if (!quit) return 0;
+
+    const todayKey = formatISO(new Date(), { representation: 'date' });
+    const urgesToday = quit.urgesTodayDate === todayKey ? quit.urgesToday : 0;
+    const xp = urgesToday < URGE_XP_DAILY_CAP ? URGE_RESIST_XP : 0;
+
+    setQuits(prev => prev.map(q => q.id === quitId ? {
+      ...q,
+      urgesResisted: q.urgesResisted + 1,
+      urgesTodayDate: todayKey,
+      urgesToday: urgesToday + 1,
+    } : q));
+    awardXP(xp);
+    return xp;
+  }, [quits, setQuits, awardXP]);
+
+  // A relapse resets the current streak but NEVER the history: best streak and
+  // total clean days are permanent. Milestones re-arm for the comeback.
+  const handleRelapse = useCallback((quitId: string, note: string) => {
+    const nowISO = formatISO(new Date());
+    setQuits(prev => prev.map(q => q.id === quitId ? {
+      ...q,
+      relapses: [...q.relapses, { date: nowISO, note: note.trim() || undefined }],
+      startDate: nowISO,
+      milestonesAwarded: [],
+    } : q));
+  }, [setQuits]);
+
+  const handleArchiveQuit = useCallback((quitId: string) => {
+    setQuits(prev => prev.map(q => q.id === quitId ? { ...q, isArchived: !q.isArchived } : q));
+  }, [setQuits]);
+
+  const handleDeleteQuit = useCallback((quit: Quit) => {
+    setQuitToDelete(quit);
+  }, []);
+
+  const confirmDeleteQuit = useCallback(() => {
+    if (quitToDelete) {
+      setQuits(prev => prev.filter(q => q.id !== quitToDelete.id));
+      setQuitToDelete(null);
+    }
+  }, [quitToDelete, setQuits]);
+
+  const cancelDeleteQuit = useCallback(() => {
+    setQuitToDelete(null);
+  }, []);
+
+  // --- Daily journal (mood + note per day) ---
+  const handleSaveDayNote = useCallback((dateKey: string, note: DayNote) => {
+    setDayNotes(prev => {
+      const next = { ...prev };
+      if (!note.text?.trim() && !note.mood) {
+        delete next[dateKey];
+      } else {
+        next[dateKey] = { mood: note.mood, text: note.text?.trim() || undefined };
+      }
+      return next;
+    });
+  }, [setDayNotes]);
 
   const handleUpdateSettings = useCallback((newSettings: PlayerSettings) => {
     setProfile(p => ({
@@ -878,6 +1037,19 @@ export const useGameLogic = () => {
     completions,
     profile,
     quests,
+    quits,
+    dayNotes,
+    handleAddQuit,
+    handleResistUrge,
+    handleRelapse,
+    handleArchiveQuit,
+    handleDeleteQuit,
+    quitToDelete,
+    confirmDeleteQuit,
+    cancelDeleteQuit,
+    milestoneCelebration,
+    setMilestoneCelebration,
+    handleSaveDayNote,
     isAddHabitModalOpen,
     setIsAddHabitModalOpen,
     isSettingsModalOpen,

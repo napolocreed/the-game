@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Habit, Completion, CompletionStatus } from '../types';
+import { Habit, Completion, CompletionStatus, DayNote } from '../types';
 // Fix: Removed 'startOfMonth' and 'startOfWeek' from date-fns import as they are causing errors.
-import { format, endOfMonth, endOfWeek, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns';
+import { format, formatISO, endOfMonth, endOfWeek, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns';
+
+const MOOD_EMOJIS: { [mood: number]: string } = { 1: '😞', 2: '😕', 3: '😐', 4: '🙂', 5: '😄' };
 
 interface CalendarViewProps {
   habits: Habit[];
   completions: Completion[];
+  dayNotes: { [dateKey: string]: DayNote };
   onDayClick: (date: Date) => void;
 }
 
@@ -30,7 +33,7 @@ const CalendarDays: React.FC = () => {
   );
 };
 
-const CalendarView: React.FC<CalendarViewProps> = ({ habits, completions, onDayClick }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ habits, completions, dayNotes, onDayClick }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Fix: Replaced startOfMonth from date-fns with manual date creation to resolve import error.
@@ -71,6 +74,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ habits, completions, onDayC
       <div className="grid grid-cols-7">
         {days.map(day => {
           const statuses = getStatusesForDay(day);
+          const note = dayNotes[formatISO(day, { representation: 'date' })];
           const dotColors = {
               [CompletionStatus.COMPLETED]: 'bg-green-500',
               [CompletionStatus.FAILED]: 'bg-orange-500',
@@ -85,9 +89,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({ habits, completions, onDayC
                 ${!isSameMonth(day, currentMonth) ? 'bg-[#2c2121] opacity-70' : ''}
                 ${isToday(day) ? 'border-yellow-400' : ''}`}
             >
-              <span className={`text-xs ${isToday(day) ? 'text-yellow-400' : 'text-white'}`}>
-                {format(day, 'd')}
-              </span>
+              <div className="flex justify-between items-start">
+                <span className={`text-xs ${isToday(day) ? 'text-yellow-400' : 'text-white'}`}>
+                  {format(day, 'd')}
+                </span>
+                {note && (
+                  <span className="text-[10px] leading-none" title={note.text}>
+                    {note.mood ? MOOD_EMOJIS[note.mood] : '📝'}
+                  </span>
+                )}
+              </div>
               <div className="flex flex-wrap gap-1 mt-1">
                  {statuses.map(status => (
                     <div key={status} className={`w-2 h-2 rounded-full ${dotColors[status]}`}></div>

@@ -3,8 +3,9 @@ import { HomeIcon } from './icons/HomeIcon';
 import { QuestIcon } from './icons/QuestIcon';
 import { ChartIcon } from './icons/ChartIcon';
 import { CalendarIcon } from './icons/CalendarIcon';
+import { SwordIcon } from './icons/SwordIcon';
 
-type ActiveTab = 'habits' | 'quests' | 'progress' | 'calendar';
+type ActiveTab = 'habits' | 'quests' | 'battles' | 'progress' | 'calendar';
 
 interface TabsProps {
   activeTab: ActiveTab;
@@ -47,6 +48,13 @@ const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab }) => {
         icon={<QuestIcon className="w-6 h-6 sm:w-5 sm:h-5" />}
         isActive={activeTab === 'quests'}
         onClick={() => setActiveTab('quests')}
+      />
+      <div className="w-1 bg-[#8a6a4f]" />
+      <TabButton
+        label="Battles"
+        icon={<SwordIcon className="w-6 h-6 sm:w-5 sm:h-5" />}
+        isActive={activeTab === 'battles'}
+        onClick={() => setActiveTab('battles')}
       />
       <div className="w-1 bg-[#8a6a4f]" />
       <TabButton

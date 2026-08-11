@@ -10,11 +10,16 @@ import ProgressPage from './components/ProgressPage';
 import SettingsModal from './components/SettingsModal';
 import ConfirmModal from './components/ConfirmModal';
 import TimeNavigator from './components/TimeNavigator';
-import { isSameDay } from 'date-fns';
+import { isSameDay, formatISO } from 'date-fns';
 import CalendarView from './components/CalendarView';
 import DayDetailModal from './components/DayDetailModal';
 import RestoreConflictModal from './components/RestoreConflictModal';
-import { Habit } from './types';
+import QuitBoard from './components/QuitBoard';
+import AddQuitModal from './components/AddQuitModal';
+import UrgeModal from './components/UrgeModal';
+import RelapseModal from './components/RelapseModal';
+import MilestoneModal from './components/MilestoneModal';
+import { Habit, Quit } from './types';
 import * as serviceWorkerRegistration from './utils/serviceWorkerRegistration';
 import UpdateNotification from './components/UpdateNotification';
 
@@ -51,6 +56,19 @@ const App: React.FC = () => {
     completions,
     profile,
     quests,
+    quits,
+    dayNotes,
+    handleAddQuit,
+    handleResistUrge,
+    handleRelapse,
+    handleArchiveQuit,
+    handleDeleteQuit,
+    quitToDelete,
+    confirmDeleteQuit,
+    cancelDeleteQuit,
+    milestoneCelebration,
+    setMilestoneCelebration,
+    handleSaveDayNote,
     isAddHabitModalOpen,
     setIsAddHabitModalOpen,
     isSettingsModalOpen,
@@ -105,6 +123,9 @@ const App: React.FC = () => {
   } = useGameLogic();
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isAddQuitModalOpen, setIsAddQuitModalOpen] = useState(false);
+  const [urgeQuit, setUrgeQuit] = useState<Quit | null>(null);
+  const [relapseQuit, setRelapseQuit] = useState<Quit | null>(null);
 
   const activeHabits = habits.filter(h => !h.isArchived);
   
@@ -165,8 +186,19 @@ const App: React.FC = () => {
             );
         }
         return <QuestBoard quests={quests} habits={activeHabits} />;
+      case 'battles':
+        return (
+          <QuitBoard
+            quits={quits}
+            onAddQuit={() => setIsAddQuitModalOpen(true)}
+            onResistUrge={setUrgeQuit}
+            onRelapse={setRelapseQuit}
+            onArchive={handleArchiveQuit}
+            onDelete={handleDeleteQuit}
+          />
+        );
       case 'calendar':
-        return <CalendarView habits={habits} completions={completions} onDayClick={handleDayClick} />;
+        return <CalendarView habits={habits} completions={completions} dayNotes={dayNotes} onDayClick={handleDayClick} />;
       case 'progress':
         return <ProgressPage habits={habits} completions={completions} profile={profile} />;
       default:
@@ -311,7 +343,46 @@ const App: React.FC = () => {
         date={selectedDate}
         habits={habits}
         completions={completions}
+        dayNote={selectedDate ? dayNotes[formatISO(selectedDate, { representation: 'date' })] : undefined}
+        onSaveNote={handleSaveDayNote}
        />
+       <AddQuitModal
+        isOpen={isAddQuitModalOpen}
+        onClose={() => setIsAddQuitModalOpen(false)}
+        onAddQuit={handleAddQuit}
+       />
+       <UrgeModal
+        isOpen={!!urgeQuit}
+        quit={urgeQuit}
+        onClose={() => setUrgeQuit(null)}
+        onResisted={handleResistUrge}
+       />
+       <RelapseModal
+        isOpen={!!relapseQuit}
+        quit={relapseQuit}
+        onClose={() => setRelapseQuit(null)}
+        onConfirm={(quitId, note) => {
+          handleRelapse(quitId, note);
+          setRelapseQuit(null);
+        }}
+       />
+       <MilestoneModal
+        celebration={milestoneCelebration}
+        onClose={() => setMilestoneCelebration(null)}
+       />
+       {quitToDelete && (
+           <ConfirmModal
+                isOpen={!!quitToDelete}
+                onClose={cancelDeleteQuit}
+                onConfirm={confirmDeleteQuit}
+                title="Delete This Boss Fight?"
+                confirmText="Delete"
+                confirmClass="bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]"
+           >
+                <p>Permanently delete "{quitToDelete.name}" and all its history?</p>
+                <p className="text-sm text-red-400 mt-2">This cannot be undone. If you just want a break, pause it instead.</p>
+           </ConfirmModal>
+       )}
        {showUpdateNotification && <UpdateNotification onUpdate={handleUpdate} />}
     </div>
   );

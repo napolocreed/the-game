@@ -14,6 +14,8 @@ export interface GameSnapshot {
   completions: unknown[];
   profile: unknown;
   quests: unknown[];
+  quits?: unknown[];
+  dayNotes?: Record<string, unknown>;
   questsLastGenerated: string | null;
   savedAt: string; // ISO date string
 }

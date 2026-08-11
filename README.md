@@ -5,6 +5,12 @@ Une PWA de suivi d'habitudes gamifiée, au look pixel art : chaque bonne habitud
 ## Fonctionnalités
 
 - **Habitudes planifiables** : catégories, difficulté, jours de la semaine, heure de rappel, archivage, duplication, réorganisation par glisser-déposer.
+- **⚔️ Boss Fights (sevrage & addictions)** : chaque chose à arrêter devient un boss à combattre.
+  - Compteur de jours clean avec paliers récompensés en XP (1 j, 3 j, 1 semaine… 2 ans), antidatage possible si vous êtes déjà clean depuis un moment.
+  - Bouton **« I have an urge »** : outil de *urge surfing* — respiration guidée ~90 s pour laisser passer le craving, avec XP à la clé (les envies résistées comptent).
+  - **Rechute compatissante** : un écart remet le compteur courant à zéro mais ne retire jamais le meilleur streak, les jours clean cumulés ni l'argent économisé. Une note optionnelle aide à identifier le déclencheur.
+  - Argent économisé calculé si vous renseignez un coût/jour.
+- **📝 Journal de bord** : humeur (1–5) et note libre sur chaque jour du calendrier — utile pour repérer les patterns et les déclencheurs.
 - **Gamification** : XP et niveaux, quêtes quotidiennes générées selon vos habitudes, badges à paliers (bronze/argent/or…).
 - **Compassion intégrée** : statuts « fait / raté / passé » avec impact différencié sur les séries, fenêtre de 48 h pour rattraper un oubli.
 - **Analytique** : heatmap façon GitHub, graphiques hebdo, répartition par catégorie, insights personnels, vue calendrier.
@@ -72,6 +78,7 @@ Pour activer le push serveur en production, ajoutez la variable de dépôt `PUSH
 ├── components/              # Composants React (pixel art / Tailwind)
 ├── utils/
 │   ├── badges.ts, quests.ts, xp.ts   # Règles de gamification
+│   ├── quits.ts             # Boss Fights : paliers, streaks, jours clean
 │   ├── db.ts                # Miroir IndexedDB + snapshots + récupération
 │   ├── notifications.ts     # Affichage de notifications (compatible PWA Android)
 │   └── serviceWorkerRegistration.ts

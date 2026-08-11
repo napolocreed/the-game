@@ -95,6 +95,36 @@ export interface Badge {
 }
 
 
+// --- Recovery / "Boss Fights" ---
+// A Quit tracks abstinence from something (an addiction, a bad habit to break).
+// Unlike daily habits, progress is measured in continuous clean time, and a
+// relapse never erases history: best streak and total clean days are permanent.
+
+export interface Relapse {
+  date: string; // ISO Date string
+  note?: string; // optional trigger/context note
+}
+
+export interface Quit {
+  id: string;
+  name: string;
+  createdAt: string; // ISO Date string (when tracking started in the app)
+  firstStartDate: string; // ISO Date string (start of the very first streak, may be backdated)
+  startDate: string; // ISO Date string (start of the CURRENT streak = last relapse or firstStartDate)
+  relapses: Relapse[];
+  urgesResisted: number; // lifetime count
+  urgesTodayDate: string | null; // day key of the last resisted urge (for the daily XP cap)
+  urgesToday: number;
+  costPerDay?: number | null; // optional money saved per clean day
+  milestonesAwarded: number[]; // milestone day-counts already rewarded for the current streak
+  isArchived?: boolean;
+}
+
+export interface DayNote {
+  mood?: number; // 1 (worst) to 5 (best)
+  text?: string;
+}
+
 export enum CompletionStatus {
   COMPLETED = 'completed',
   FAILED = 'failed',
