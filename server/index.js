@@ -3,13 +3,19 @@ const express = require('express');
 const webPush = require('web-push');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { Pool } = require('pg');
+const { createStorage } = require('./storage');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 // ---------- middleware ----------
-app.use(cors()); // tighten allowed origins later if you want
+// ALLOWED_ORIGINS: comma-separated list (e.g. "https://napolocreed.github.io").
+// Unset = allow all (local development).
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(o => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+app.use(cors(allowedOrigins.length > 0 ? { origin: allowedOrigins } : {}));
 app.use(bodyParser.json());
 
 // ---------- health + public key ----------
@@ -28,50 +34,9 @@ if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
 }
 webPush.setVapidDetails(CONTACT_EMAIL, VAPID_PUBLIC_KEY || 'missing', VAPID_PRIVATE_KEY || 'missing');
 
-// ---------- database ----------
-const useSSL = process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false;
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: useSSL
-});
-
-async function initDb() {
-  await pool.query(`
-    create table if not exists subscriptions (
-      id serial primary key,
-      endpoint text unique not null,
-      p256dh text not null,
-      auth text not null,
-      reminders jsonb not null default '[]'::jsonb,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now()
-    );
-    create index if not exists idx_subscriptions_updated_at on subscriptions(updated_at desc);
-    alter table subscriptions add column if not exists tz text not null default 'UTC';
-  `);
-}
-
-async function upsertSubscription({ subscription, reminders, tz }) {
-  const { endpoint, keys } = subscription || {};
-  if (!endpoint || !keys?.p256dh || !keys?.auth) {
-    throw new Error('Invalid subscription payload');
-  }
-  const r = Array.isArray(reminders) ? reminders : [];
-  const timezone = typeof tz === 'string' && isValidTimeZone(tz) ? tz : 'UTC';
-  await pool.query(
-    `
-    insert into subscriptions (endpoint, p256dh, auth, reminders, tz)
-    values ($1, $2, $3, $4, $5)
-    on conflict (endpoint)
-    do update set p256dh = excluded.p256dh,
-                  auth = excluded.auth,
-                  reminders = excluded.reminders,
-                  tz = excluded.tz,
-                  updated_at = now()
-    `,
-    [endpoint, keys.p256dh, keys.auth, JSON.stringify(r), timezone]
-  );
-}
+// ---------- storage ----------
+// Pluggable backend (firestore / postgres / memory) — see storage.js.
+const storage = createStorage();
 
 function isValidTimeZone(tz) {
   try {
@@ -82,8 +47,22 @@ function isValidTimeZone(tz) {
   }
 }
 
+async function upsertSubscription({ subscription, reminders, tz }) {
+  const { endpoint, keys } = subscription || {};
+  if (!endpoint || !keys?.p256dh || !keys?.auth) {
+    throw new Error('Invalid subscription payload');
+  }
+  await storage.upsert({
+    endpoint,
+    p256dh: keys.p256dh,
+    auth: keys.auth,
+    reminders: Array.isArray(reminders) ? reminders : [],
+    tz: typeof tz === 'string' && isValidTimeZone(tz) ? tz : 'UTC',
+  });
+}
+
 async function getAllSubscriptions() {
-  const { rows } = await pool.query(`select endpoint, p256dh, auth, reminders, tz from subscriptions`);
+  const rows = await storage.getAll();
   return rows.map(r => ({
     subscription: {
       endpoint: r.endpoint,
@@ -95,7 +74,7 @@ async function getAllSubscriptions() {
 }
 
 async function removeSubscriptionByEndpoint(endpoint) {
-  await pool.query(`delete from subscriptions where endpoint = $1`, [endpoint]);
+  await storage.removeByEndpoint(endpoint);
 }
 
 // ---------- routes ----------
@@ -224,9 +203,9 @@ app.get('/check', async (_, res) => {
 // ---------- start ----------
 (async () => {
   try {
-    await initDb();
+    await storage.init();
     app.listen(PORT, () => {
-      console.log(`Push server running on port ${PORT}`);
+      console.log(`Push server running on port ${PORT} (storage: ${storage.name})`);
     });
   } catch (e) {
     console.error('failed to init', e);

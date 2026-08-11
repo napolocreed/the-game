@@ -54,7 +54,12 @@ Activez les notifications dans Réglages → Notifications. Les rappels des habi
 
 ### 2. Push serveur (app fermée) — optionnel
 
-Pour recevoir les rappels même app fermée, déployez le petit serveur du dossier [`server/`](server/README.md) (Render, Railway, fly.io… + une base Postgres), puis :
+Pour recevoir les rappels même app fermée (le push est délivré par le système, donc un téléphone qui tue les apps n'y change rien), déployez le petit serveur du dossier `server/` :
+
+- **Sur GCP (recommandé, ~0 €)** : Cloud Run + Firestore + Cloud Scheduler — guide pas-à-pas complet dans [`server/DEPLOY_GCP.md`](server/DEPLOY_GCP.md).
+- **Ailleurs** (Render, Railway, fly.io… + Postgres type Neon/Supabase) : voir [`server/README.md`](server/README.md).
+
+Puis :
 
 1. Renseignez l'URL du serveur dans `.env.local` :
    ```
