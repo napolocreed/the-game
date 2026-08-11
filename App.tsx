@@ -244,7 +244,7 @@ const App: React.FC = () => {
   const confirmModalContent = getConfirmModalContent();
 
   return (
-    <div className="min-h-screen bg-[#2c2121] text-[#f0e9d6] p-4 sm:p-6 md:p-8">
+    <div className="min-h-screen overflow-x-hidden bg-[#2c2121] text-[#f0e9d6] p-4 sm:p-6 md:p-8">
       <div className="max-w-4xl mx-auto">
         <Header profile={profile} onSettingsClick={() => setIsSettingsModalOpen(true)} />
         <main>

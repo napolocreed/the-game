@@ -41,31 +41,31 @@ const MoodTrendChart: React.FC<{ dayNotes: { [dateKey: string]: DayNote }; relap
 
   return (
     <div>
+      {/* Single row of columns; the relapse marker is a small red block inside
+          each column (an emoji row here forced ~12px per column and overflowed
+          phone screens). */}
       <div className="h-24 flex items-end gap-[2px]">
         {days.map(day => {
           const key = formatISO(day, { representation: 'date' });
           const mood = dayNotes[key]?.mood;
+          const hadRelapse = relapseDayKeys.has(key);
           return (
-            <div key={key} className="flex-1 h-full flex flex-col justify-end" title={`${format(day, 'MMM d')}${mood ? ` — mood ${mood}/5` : ''}`}>
+            <div
+              key={key}
+              className="flex-1 min-w-0 h-full flex flex-col justify-end"
+              title={`${format(day, 'MMM d')}${mood ? ` — mood ${mood}/5` : ''}${hadRelapse ? ' — relapse' : ''}`}
+            >
               {mood
                 ? <div className={`w-full ${MOOD_COLORS[mood]}`} style={{ height: `${(mood / 5) * 100}%` }} />
                 : <div className="w-full h-[2px] bg-[#6a5340]" />}
-            </div>
-          );
-        })}
-      </div>
-      <div className="flex gap-[2px] mt-1">
-        {days.map(day => {
-          const key = formatISO(day, { representation: 'date' });
-          return (
-            <div key={key} className="flex-1 text-center text-[8px] leading-none">
-              {relapseDayKeys.has(key) ? '💥' : ' '}
+              <div className={`w-full h-1.5 mt-[2px] ${hadRelapse ? 'bg-red-600' : 'bg-transparent'}`} />
             </div>
           );
         })}
       </div>
       <div className="flex justify-between text-[10px] text-[#b0a08f] mt-1">
         <span>{format(days[0], 'MMM d')}</span>
+        <span className="text-red-400">▪ relapse</span>
         <span>Today</span>
       </div>
     </div>

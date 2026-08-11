@@ -13,7 +13,7 @@ const BadgeUnlockModal: React.FC<BadgeUnlockModalProps> = ({ isOpen, onClose, ba
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div className="w-full max-w-md bg-[#2c2121] border-4 border-[#f5b342] shadow-[8px_8px_0px_#8a6a4f] p-6 text-center">
+      <div className="w-full max-w-md bg-[#2c2121] border-4 border-[#f5b342] shadow-[8px_8px_0px_#8a6a4f] p-6 text-center max-h-[90vh] overflow-y-auto">
         <h2 className="text-3xl text-yellow-400 mb-4">Achievement Unlocked!</h2>
         <div className="space-y-6 my-6">
           {badges.map(({ badge, tier }) => (
