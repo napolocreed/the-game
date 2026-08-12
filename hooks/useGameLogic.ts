@@ -3,7 +3,7 @@ import { Habit, PlayerProfile, Quest, Badge, Completion, CompletionStatus, Habit
 import { useLocalStorage } from './useLocalStorage';
 // Fix: Removed 'subDays' from date-fns import as it is causing an error.
 import { formatISO, differenceInCalendarDays, isSameDay } from 'date-fns';
-import { calculateXP, calculateXpToNextLevel } from '../utils/xp';
+import { calculateXP, calculateXpToNextLevel, migrateLevel, XP_CURVE_VERSION } from '../utils/xp';
 import { generateDailyQuests } from '../utils/quests';
 import { BADGE_CATALOG, checkAndUnlockBadges } from '../utils/badges';
 import { showAppNotification } from '../utils/notifications';
@@ -131,6 +131,18 @@ export const useGameLogic = () => {
         }
       }
   }, [habits, profile, setHabits, setProfile]); 
+
+  // The XP curve was exponential and stalled out around level 18. Recompute
+  // the level from lifetime XP, which is the ground truth and is untouched, so
+  // a curve change is a recalculation rather than a loss. Runs exactly once.
+  useEffect(() => {
+    if (profile.curveVersion === XP_CURVE_VERSION) return;
+    setProfile(prev => ({
+      ...prev,
+      ...migrateLevel(prev),
+      curveVersion: XP_CURVE_VERSION,
+    }));
+  }, [profile.curveVersion, setProfile]);
 
   const hasMeaningfulData = habits.length > 0 || completions.length > 0 || quits.length > 0 || tasks.length > 0 || profile.totalXP > 0;
 

@@ -43,6 +43,9 @@ export interface PlayerProfile {
   unlockedBadges: { [badgeId: string]: number }; // e.g., { 'streak-master': 2 } for Silver tier
   totalQuestsCompleted?: number;
   settings?: PlayerSettings;
+  /** Which XP curve this profile's level was computed under. Absent means the
+   *  original exponential curve; the migration recalculates from totalXP. */
+  curveVersion?: number;
 }
 
 export interface PreConfiguredHabit {
