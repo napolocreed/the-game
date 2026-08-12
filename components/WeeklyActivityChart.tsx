@@ -1,5 +1,5 @@
 import React from 'react';
-import { Completion } from '../types';
+import { Completion, CompletionStatus } from '../types';
 // Fix: Removed 'startOfToday' and 'subDays' from date-fns import as they are causing errors.
 import { format, isSameDay } from 'date-fns';
 
@@ -20,7 +20,7 @@ const WeeklyActivityChart: React.FC<WeeklyActivityChartProps> = ({ completions }
   });
 
   const data = last7Days.map(day => {
-    const dayCompletions = completions.filter(c => isSameDay(new Date(c.date), day)).length;
+    const dayCompletions = completions.filter(c => c.status === CompletionStatus.COMPLETED && isSameDay(new Date(c.date), day)).length;
     return {
       name: format(day, 'EEE'),
       completions: dayCompletions,
