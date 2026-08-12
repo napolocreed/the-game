@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Habit, Completion, CompletionStatus, PlayerProfile, Quit, DayNote } from '../types';
+import { Habit, Completion, CompletionStatus, PlayerProfile, Quit, DayNote, Task } from '../types';
 import StatCard from './StatCard';
 import WeeklyActivityChart from './WeeklyActivityChart';
 import CategoryDistributionChart from './CategoryDistributionChart';
@@ -10,6 +10,7 @@ import AnalyticsInsights from './AnalyticsInsights';
 import RecoverySection from './RecoverySection';
 import ConsistencyChart from './ConsistencyChart';
 import HabitStatsCard from './HabitStatsCard';
+import TaskStats from './TaskStats';
 import { habitStats, personalRecords } from '../utils/analytics';
 import { format } from 'date-fns';
 import { CheckIcon } from './icons/CheckIcon';
@@ -23,18 +24,20 @@ interface ProgressPageProps {
   profile: PlayerProfile;
   quits: Quit[];
   dayNotes: { [dateKey: string]: DayNote };
+  tasks: Task[];
 }
 
-type StatsTab = 'overview' | 'habits' | 'recovery' | 'awards';
+type StatsTab = 'overview' | 'habits' | 'quests' | 'recovery' | 'awards';
 
-const SUB_TABS: { id: StatsTab; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'habits', label: 'Habits' },
-  { id: 'recovery', label: 'Recovery' },
-  { id: 'awards', label: 'Awards' },
+const SUB_TABS: { id: StatsTab; label: string; short: string }[] = [
+  { id: 'overview', label: 'Overview', short: 'All' },
+  { id: 'habits', label: 'Habits', short: 'Habits' },
+  { id: 'quests', label: 'Quests', short: 'Quests' },
+  { id: 'recovery', label: 'Recovery', short: 'Boss' },
+  { id: 'awards', label: 'Awards', short: 'Awards' },
 ];
 
-const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profile, quits, dayNotes }) => {
+const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profile, quits, dayNotes, tasks }) => {
   const [tab, setTab] = useState<StatsTab>('overview');
 
   const totalCompletions = completions.filter(c => c.status === CompletionStatus.COMPLETED).length;
@@ -54,7 +57,6 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
 
   return (
     <div>
-      <h2 className="text-2xl md:text-3xl text-[#f5b342] mb-4">Your Progress</h2>
 
       {/* Sub-navigation: the old single page had become a long scroll; four
           focused screens keep each question one tap away. */}
@@ -65,11 +67,15 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
             <button
               role="tab"
               aria-selected={tab === t.id}
+              // The visible label shortens on narrow phones; the accessible
+              // name must not, or the section becomes "All" to a screen reader.
+              aria-label={t.label}
               onClick={() => setTab(t.id)}
               className={`flex-1 min-w-0 px-1 py-2 text-[9px] sm:text-xs truncate transition-colors
                 ${tab === t.id ? 'bg-[#8a6a4f] text-white' : 'bg-[#2c2121] text-[#b0a08f] hover:bg-[#4a3f36]'}`}
             >
-              {t.label}
+              <span className="pm:hidden block truncate">{t.short}</span>
+              <span className="hidden pm:block truncate">{t.label}</span>
             </button>
           </React.Fragment>
         ))}
@@ -92,10 +98,7 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
           <ConsistencyChart habits={habits} completions={completions} />
           <AnalyticsInsights completions={completions} habits={habits} />
 
-          <div>
-            <h3 className="text-xl text-white mb-4">Completion History</h3>
-            <CompletionHeatmap completions={completions} />
-          </div>
+          <CompletionHeatmap completions={completions} />
 
           <WeeklyActivityChart completions={completions} />
           <CategoryDistributionChart completions={completions} />
@@ -105,13 +108,24 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
       {tab === 'habits' && (
         <div>
           {activeHabitStats.length === 0 ? (
-            <p className="text-[#b0a08f] text-center p-8">Create some habits to see their stats here!</p>
+            <p className="text-[#b0a08f] text-center p-8">No habits yet.</p>
           ) : (
             <>
-              <p className="text-[10px] text-[#b0a08f] mb-3">
-                Last 30 days per habit — <span className="text-[#3b9b73]">▮ done</span>{' '}
-                <span className="text-[#c84141]">▖ failed</span>{' '}
-                <span className="text-[#8a7a68]">▗ skipped</span> · dark = missed
+              {/* Swatches are drawn, not typed: the pixel font has no block
+                  characters, so a "▮" would silently fall back to a smooth one. */}
+              <p className="text-[10px] text-[#b0a08f] mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-3 bg-[#3b9b73]" /> done
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-[6px] bg-[#c84141]" /> failed
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-[9px] bg-[#8a7a68]" /> skipped
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-3 bg-[#1f1717]" /> missed
+                </span>
               </p>
               <div className="space-y-4">
                 {activeHabitStats.map(stats => (
@@ -123,22 +137,21 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
         </div>
       )}
 
+      {tab === 'quests' && <TaskStats tasks={tasks} />}
+
       {tab === 'recovery' && (
         quits.length > 0 || Object.keys(dayNotes).length > 0 ? (
           <RecoverySection quits={quits} dayNotes={dayNotes} habits={habits} completions={completions} />
         ) : (
           <p className="text-[#b0a08f] text-center p-8">
-            Start a Boss Fight in the ⚔️ Battles tab, or log your mood in the Calendar, to unlock recovery analytics.
+            Start a Boss Fight or log a mood to unlock this.
           </p>
         )
       )}
 
       {tab === 'awards' && (
         <div>
-          <div className="flex items-baseline justify-between mb-4">
-            <h3 className="text-xl text-white">Achievements</h3>
-            <span className="text-xs text-[#f5b342]">{unlockedTiers}/{totalTiers} tiers</span>
-          </div>
+          <p className="text-xs text-[#f5b342] mb-4">{unlockedTiers}/{totalTiers} tiers</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {BADGE_CATALOG.map(badge => (
               <BadgeItem
@@ -149,6 +162,7 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
                 habits={habits}
                 completions={completions}
                 quits={quits}
+                tasks={tasks}
               />
             ))}
           </div>

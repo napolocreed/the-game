@@ -92,7 +92,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile,
                         className="w-full p-2 bg-[#4a3f36] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342]"
                         aria-label="Daily Habit Limit"
                     />
-                    <p className="text-xs text-amber-300 mt-2">Set a limit on habits per day to maintain focus. Leave blank for unlimited.</p>
+                    <p className="text-xs text-amber-300 mt-2">Blank = no limit.</p>
                 </div>
             </div>
 
@@ -107,7 +107,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile,
                     </div>
                     {notificationPermission === 'granted' && (
                         <div className="mt-4 pt-4 border-t-2 border-[#4a3f36] space-y-4">
-                            <p className="text-xs text-[#b0a08f]">Reminders fire while the app is open. Add a reminder time to a habit to use them.</p>
+                            <p className="text-xs text-[#b0a08f]">Fires only while the app is open.</p>
                             {pushConfigured && (
                                 <div>
                                     <div className="flex justify-between items-center">
@@ -126,7 +126,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile,
                         </div>
                     )}
                 </div>
-                {notificationPermission === 'denied' && <p className="text-xs text-amber-300 mt-2">You need to enable notifications in your browser settings for this site.</p>}
+                {notificationPermission === 'denied' && <p className="text-xs text-amber-300 mt-2">Enable it in your browser settings.</p>}
             </div>
 
             <div className="mb-6">
@@ -155,12 +155,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile,
                     <ToggleSwitch checked={autoBackupEnabled} onChange={onToggleAutoBackup} />
                   </div>
                   <p className="text-xs text-amber-300 mt-1">
-                    Saves a weekly snapshot on this device (survives cleared site data in most cases).
+                    Weekly snapshot on this device.
                     {lastAutoBackupDate && ` Last: ${new Date(lastAutoBackupDate).toLocaleDateString()}`}
                   </p>
                 </div>
               </div>
-              <p className="text-xs text-amber-300 mt-2">Manual backups are recommended. Importing data will overwrite your current progress.</p>
+              <p className="text-xs text-amber-300 mt-2">Import overwrites your progress.</p>
             </div>
 
             <div>

@@ -21,15 +21,14 @@ const QuitBoard: React.FC<QuitBoardProps> = ({ quits, onAddQuit, onResistUrge, o
 
   return (
     <div className="mb-8">
-      <h2 className="text-2xl md:text-3xl text-[#f5b342] mb-2">Boss Fights</h2>
-      <p className="text-sm text-[#b0a08f] mb-4">
-        Each addiction is a boss. Every clean day is a hit. Slips happen — the fight isn't over until you win.
-      </p>
+      <h2 className="text-2xl md:text-3xl text-[#f5b342] mb-4">Boss Fights</h2>
 
+      {/* The premise only needs explaining while there is nothing to look at.
+          Once a fight exists the cards are the screen. */}
       {activeQuits.length === 0 && pausedQuits.length === 0 && (
-        <div className="text-center border-4 border-dashed border-[#6a5340] p-10 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
-          <p className="text-xl text-[#f0e9d6]">No boss on the battlefield yet.</p>
-          <p className="mt-2 text-[#b0a08f]">Name the thing you want to quit and start dealing damage — one clean day at a time.</p>
+        <div className="text-center border-4 border-dashed border-[#6a5340] p-8 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
+          <p className="text-xl text-[#f0e9d6]">No boss yet.</p>
+          <p className="mt-2 text-[#b0a08f]">Every clean day is a hit.</p>
         </div>
       )}
 

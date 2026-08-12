@@ -1,7 +1,20 @@
-import React from 'react';
+import { pixelIcon } from './pixelIcon';
 
-export const FailIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-  </svg>
-);
+export const FailIcon = pixelIcon([
+  '................',
+  '................',
+  '..xx........xx..',
+  '..xxx......xxx..',
+  '...xxx....xxx...',
+  '....xxx..xxx....',
+  '.....xxxxxx.....',
+  '......xxxx......',
+  '......xxxx......',
+  '.....xxxxxx.....',
+  '....xxx..xxx....',
+  '...xxx....xxx...',
+  '..xxx......xxx..',
+  '..xx........xx..',
+  '................',
+  '................',
+]);

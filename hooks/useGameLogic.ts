@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Habit, PlayerProfile, Quest, Badge, Completion, CompletionStatus, HabitCategory, HabitType, QuestType, BadgeTier, PlayerSettings, Quit, DayNote } from '../types';
+import { Habit, PlayerProfile, Quest, Badge, Completion, CompletionStatus, HabitCategory, HabitType, QuestType, BadgeTier, PlayerSettings, Quit, DayNote, Task, TaskSize } from '../types';
 import { useLocalStorage } from './useLocalStorage';
 // Fix: Removed 'subDays' from date-fns import as it is causing an error.
 import { formatISO, differenceInCalendarDays, isSameDay } from 'date-fns';
@@ -9,6 +9,7 @@ import { BADGE_CATALOG, checkAndUnlockBadges } from '../utils/badges';
 import { showAppNotification } from '../utils/notifications';
 import { GameSnapshot, saveMirror, loadMirror, addSnapshot, getLatestSnapshot, requestPersistentStorage } from '../utils/db';
 import { QUIT_MILESTONES, URGE_RESIST_XP, URGE_XP_DAILY_CAP, dueMilestones } from '../utils/quits';
+import { dayKey as taskDayKey, pickDailyTask, taskXp } from '../utils/tasks';
 
 // --- Push Notification Server ---
 // Optional: set VITE_PUSH_SERVER_URL (e.g. in .env.local or on your host) to enable
@@ -48,6 +49,7 @@ export const useGameLogic = () => {
   const [quests, setQuests] = useLocalStorage<Quest[]>('quests', []);
   const [quits, setQuits] = useLocalStorage<Quit[]>('quits', []);
   const [dayNotes, setDayNotes] = useLocalStorage<{ [dateKey: string]: DayNote }>('dayNotes', {});
+  const [tasks, setTasks] = useLocalStorage<Task[]>('tasks', []);
   const [questsLastGenerated, setQuestsLastGenerated] = useLocalStorage<string | null>('questsLastGenerated', null);
   const [autoBackupEnabled, setAutoBackupEnabled] = useLocalStorage<boolean>('autoBackupEnabled', true);
   const [lastAutoBackupDate, setLastAutoBackupDate] = useLocalStorage<string | null>('lastAutoBackupDate', null);
@@ -130,7 +132,7 @@ export const useGameLogic = () => {
       }
   }, [habits, profile, setHabits, setProfile]); 
 
-  const hasMeaningfulData = habits.length > 0 || completions.length > 0 || quits.length > 0 || profile.totalXP > 0;
+  const hasMeaningfulData = habits.length > 0 || completions.length > 0 || quits.length > 0 || tasks.length > 0 || profile.totalXP > 0;
 
   // Ask the browser to protect this origin's storage from eviction (best effort).
   useEffect(() => {
@@ -170,9 +172,10 @@ export const useGameLogic = () => {
     setQuests((recoveryData.quests as Quest[]) || []);
     setQuits((recoveryData.quits as Quit[]) || []);
     setDayNotes((recoveryData.dayNotes as { [dateKey: string]: DayNote }) || {});
+    setTasks((recoveryData.tasks as Task[]) || []);
     setQuestsLastGenerated(recoveryData.questsLastGenerated || null);
     setRecoveryData(null);
-  }, [recoveryData, setHabits, setCompletions, setProfile, setQuests, setQuestsLastGenerated]);
+  }, [recoveryData, setHabits, setCompletions, setProfile, setQuests, setQuits, setDayNotes, setTasks, setQuestsLastGenerated]);
 
   const dismissRecovery = useCallback(() => {
     setRecoveryData(null);
@@ -183,10 +186,10 @@ export const useGameLogic = () => {
   useEffect(() => {
     if (!hasMeaningfulData) return;
     const timeout = window.setTimeout(() => {
-      saveMirror({ habits, completions, profile, quests, quits, dayNotes, questsLastGenerated, savedAt: new Date().toISOString() });
+      saveMirror({ habits, completions, profile, quests, quits, dayNotes, tasks, questsLastGenerated, savedAt: new Date().toISOString() });
     }, 1000);
     return () => window.clearTimeout(timeout);
-  }, [habits, completions, profile, quests, quits, dayNotes, questsLastGenerated, hasMeaningfulData]);
+  }, [habits, completions, profile, quests, quits, dayNotes, tasks, questsLastGenerated, hasMeaningfulData]);
 
   // Weekly snapshot history in IndexedDB (keeps the last 8).
   useEffect(() => {
@@ -194,7 +197,7 @@ export const useGameLogic = () => {
 
     const performAutoBackup = () => {
       console.log("Performing weekly auto-backup snapshot...");
-      addSnapshot({ habits, completions, profile, quests, quits, dayNotes, questsLastGenerated, savedAt: new Date().toISOString() });
+      addSnapshot({ habits, completions, profile, quests, quits, dayNotes, tasks, questsLastGenerated, savedAt: new Date().toISOString() });
       setLastAutoBackupDate(new Date().toISOString());
     };
 
@@ -439,7 +442,7 @@ export const useGameLogic = () => {
     setHabits(updatedHabits);
 
     setProfile(prevProfile => {
-        const { newlyUnlocked } = checkAndUnlockBadges(prevProfile, updatedHabits, completions, BADGE_CATALOG, quits);
+        const { newlyUnlocked } = checkAndUnlockBadges({ profile: prevProfile, habits: updatedHabits, completions, quits, tasks }, BADGE_CATALOG);
         if (newlyUnlocked.length > 0) {
             const unlockedForModal: { badge: Badge, tier: BadgeTier }[] = [];
             const newBadgeTiers: { [badgeId: string]: number } = {};
@@ -593,7 +596,7 @@ export const useGameLogic = () => {
     setProfile(prevProfile => {
         let nextProfileState = { ...prevProfile };
         
-        const { newlyUnlocked } = checkAndUnlockBadges(nextProfileState, newHabitsForCalculation, newCompletions, BADGE_CATALOG, quits);
+        const { newlyUnlocked } = checkAndUnlockBadges({ profile: nextProfileState, habits: newHabitsForCalculation, completions: newCompletions, quits, tasks }, BADGE_CATALOG);
         if (newlyUnlocked.length > 0) {
             const unlockedForModal: { badge: Badge, tier: BadgeTier }[] = [];
             const newBadgeTiers: { [badgeId: string]: number } = {};
@@ -666,34 +669,40 @@ export const useGameLogic = () => {
     updateStateAfterCompletion(habitId, CompletionStatus.SKIPPED);
   }, [updateStateAfterCompletion]);
 
+  // Reverses an XP award, walking levels back down if needed. `awardXP`
+  // ignores non-positive amounts on purpose, so undoing needs its own path —
+  // otherwise complete-then-undo-then-complete would pay out twice.
+  const removeXP = useCallback((amount: number) => {
+    if (amount <= 0) return;
+    setProfile(prev => {
+      let newCurrentXP = prev.currentXP - amount;
+      const newTotalXP = prev.totalXP - amount;
+      let newLevel = prev.level;
+      let newXpToNextLevel = prev.xpToNextLevel;
+
+      while (newCurrentXP < 0) {
+        newLevel -= 1;
+        if (newLevel < 1) {
+          newLevel = 1;
+          newCurrentXP = 0;
+          newXpToNextLevel = calculateXpToNextLevel(1);
+          break;
+        }
+        const xpForPrevLevel = calculateXpToNextLevel(newLevel);
+        newCurrentXP += xpForPrevLevel;
+        newXpToNextLevel = xpForPrevLevel;
+      }
+
+      return { ...prev, level: newLevel, currentXP: newCurrentXP, totalXP: Math.max(0, newTotalXP), xpToNextLevel: newXpToNextLevel };
+    });
+  }, [setProfile]);
+
   const handleUndoCompletion = useCallback((habitId: string) => {
     const completionToUndo = completions.find(c => c.habitId === habitId && isSameDay(new Date(c.date), viewingDate));
     if (!completionToUndo) return;
 
     // This is a simplified undo that does not revert badge unlocks. A full-scale undo would require a more complex event sourcing system.
-    if (completionToUndo.xpGained && completionToUndo.xpGained > 0) {
-        setProfile(prev => {
-            let newCurrentXP = prev.currentXP - (completionToUndo.xpGained ?? 0);
-            let newTotalXP = prev.totalXP - (completionToUndo.xpGained ?? 0);
-            let newLevel = prev.level;
-            let newXpToNextLevel = prev.xpToNextLevel;
-
-            while (newCurrentXP < 0) {
-                newLevel -= 1;
-                if (newLevel < 1) {
-                    newLevel = 1;
-                    newCurrentXP = 0;
-                    newXpToNextLevel = calculateXpToNextLevel(1);
-                    break;
-                }
-                const xpForPrevLevel = calculateXpToNextLevel(newLevel);
-                newCurrentXP += xpForPrevLevel;
-                newXpToNextLevel = xpForPrevLevel;
-            }
-            
-            return { ...prev, level: newLevel, currentXP: newCurrentXP, totalXP: Math.max(0, newTotalXP), xpToNextLevel: newXpToNextLevel };
-        });
-    }
+    removeXP(completionToUndo.xpGained ?? 0);
     
     // Revert Quests
     if (completionToUndo.questsAffected && completionToUndo.questsAffected.length > 0) {
@@ -735,7 +744,7 @@ export const useGameLogic = () => {
 
     // Remove Completion record from history
     setCompletions(prev => prev.filter(c => c.id !== completionToUndo.id));
-  }, [completions, viewingDate, setProfile, setQuests, setHabits, setCompletions]);
+  }, [completions, viewingDate, removeXP, setProfile, setQuests, setHabits, setCompletions]);
 
 
   const handleArchiveHabit = useCallback((habit: Habit) => {
@@ -803,7 +812,7 @@ export const useGameLogic = () => {
 
   const handleExportData = useCallback(() => {
     const backupData = {
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       data: {
         habits,
@@ -812,6 +821,7 @@ export const useGameLogic = () => {
         quests,
         quits,
         dayNotes,
+        tasks,
         questsLastGenerated,
       }
     };
@@ -863,6 +873,7 @@ export const useGameLogic = () => {
       setQuests(parsedData.quests || []);
       setQuits(parsedData.quits || []); // absent from v1 backups → empty
       setDayNotes(parsedData.dayNotes || {});
+      setTasks(parsedData.tasks || []); // absent from v1/v2 backups -> empty
       setQuestsLastGenerated(parsedData.questsLastGenerated || null);
       setImportFileContent(null);
       alert('Data restored successfully! The app will now reload.');
@@ -872,7 +883,7 @@ export const useGameLogic = () => {
       console.error("Restore error:", error);
       setImportFileContent(null);
     }
-  }, [importFileContent, setHabits, setCompletions, setProfile, setQuests, setQuits, setDayNotes, setQuestsLastGenerated]);
+  }, [importFileContent, setHabits, setCompletions, setProfile, setQuests, setQuits, setDayNotes, setTasks, setQuestsLastGenerated]);
 
   const cancelImport = useCallback(() => {
     setImportFileContent(null);
@@ -901,6 +912,104 @@ export const useGameLogic = () => {
       return { ...prev, level: newLevel, totalXP: newTotalXP, currentXP: newCurrentXP, xpToNextLevel: newXpToNextLevel };
     });
   }, [notificationPermission, setProfile]);
+
+  // --- One-shot tasks ---
+  // Deliberately weightless day to day: a task never breaks a streak, never
+  // counts as a failed day, and never enters the completed/scheduled rate.
+  // The only pressure it applies is its own age, which is true by construction.
+
+  const handleAddTask = useCallback((data: {
+    name: string;
+    category: HabitCategory;
+    size: TaskSize;
+    dueDate?: string | null;
+    note?: string;
+    createdAt?: string | null;
+  }) => {
+    // A backdated start is accepted once, here, and clamped to the past so the
+    // clock can never be set into the future to fake an age.
+    const now = new Date();
+    const backdated = data.createdAt ? new Date(data.createdAt) : null;
+    const createdAt = backdated && !Number.isNaN(backdated.getTime()) && backdated <= now
+      ? formatISO(backdated)
+      : formatISO(now);
+    const newTask: Task = {
+      id: crypto.randomUUID(),
+      name: data.name.trim(),
+      category: data.category,
+      size: data.size,
+      createdAt,
+      completedAt: null,
+      droppedAt: null,
+      dueDate: data.dueDate || null,
+      pushedOn: [],
+      note: data.note?.trim() || undefined,
+    };
+    setTasks(prev => [newTask, ...prev]);
+  }, [setTasks]);
+
+  const handleCompleteTask = useCallback((taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || task.completedAt || task.droppedAt) return;
+
+    const now = new Date();
+    const xp = taskXp(task, now);
+    setTasks(prev => prev.map(t =>
+      t.id === taskId ? { ...t, completedAt: formatISO(now), xpGained: xp } : t
+    ));
+    awardXP(xp);
+  }, [tasks, setTasks, awardXP]);
+
+  /** "Not today." Free, guilt-free — but counted, because the count is true. */
+  const handlePushTask = useCallback((taskId: string) => {
+    const today = taskDayKey(new Date());
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
+      const pushedOn = t.pushedOn ?? [];
+      if (pushedOn.includes(today)) return t;
+      return { ...t, pushedOn: [...pushedOn, today] };
+    }));
+  }, [setTasks]);
+
+  /** Letting something go is a decision, not a failure. It is never punished. */
+  const handleDropTask = useCallback((taskId: string) => {
+    setTasks(prev => prev.map(t =>
+      t.id === taskId && !t.completedAt ? { ...t, droppedAt: formatISO(new Date()) } : t
+    ));
+  }, [setTasks]);
+
+  const handleReopenTask = useCallback((taskId: string) => {
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
+      // createdAt is never touched: the clock keeps running, so
+      // complete-then-reopen cannot be used to reset an age.
+      return { ...t, completedAt: null, droppedAt: null, xpGained: undefined };
+    }));
+    const task = tasks.find(t => t.id === taskId);
+    if (task?.completedAt && task.xpGained) {
+      removeXP(task.xpGained);
+    }
+  }, [tasks, setTasks, removeXP]);
+
+  const handleDeleteTask = useCallback((taskId: string) => {
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+  }, [setTasks]);
+
+  const handleEditTask = useCallback((taskId: string, data: {
+    name: string;
+    category: HabitCategory;
+    size: TaskSize;
+    dueDate?: string | null;
+    note?: string;
+  }) => {
+    setTasks(prev => prev.map(t => t.id === taskId
+      ? { ...t, name: data.name.trim(), category: data.category, size: data.size, dueDate: data.dueDate || null, note: data.note?.trim() || undefined }
+      : t));
+  }, [setTasks]);
+
+  // The task offered today. `pickDailyTask` is deterministic for a given day,
+  // so the offer is stable across opens without persisting anything.
+  const dailyTask = pickDailyTask(tasks);
 
   const handleAddQuit = useCallback((data: { name: string; startDate: string; costPerDay: number | null; motivation: string; savingsGoal: { name: string; price: number } | null }) => {
     const nowISO = formatISO(new Date());
@@ -1043,7 +1152,7 @@ export const useGameLogic = () => {
   useEffect(() => {
     if (quits.length === 0) return;
     setProfile(prevProfile => {
-      const { newlyUnlocked } = checkAndUnlockBadges(prevProfile, habits, completions, BADGE_CATALOG, quits);
+      const { newlyUnlocked } = checkAndUnlockBadges({ profile: prevProfile, habits, completions, quits, tasks }, BADGE_CATALOG);
       if (newlyUnlocked.length === 0) return prevProfile;
 
       const unlockedForModal: { badge: Badge, tier: BadgeTier }[] = [];
@@ -1127,6 +1236,15 @@ export const useGameLogic = () => {
     quests,
     quits,
     dayNotes,
+    tasks,
+    dailyTask,
+    handleAddTask,
+    handleEditTask,
+    handleCompleteTask,
+    handlePushTask,
+    handleDropTask,
+    handleReopenTask,
+    handleDeleteTask,
     handleAddQuit,
     handleResistUrge,
     handleTagLastUrge,

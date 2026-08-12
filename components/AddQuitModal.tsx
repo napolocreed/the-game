@@ -90,7 +90,7 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
               onChange={(e) => setSinceDate(e.target.value)}
               className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342]"
             />
-            <p className="text-xs text-amber-300 mt-1">Already clean for a while? Backdate it — that progress counts.</p>
+            <p className="text-xs text-amber-300 mt-1">Backdating counts.</p>
           </div>
 
           <div>
@@ -102,7 +102,7 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
               placeholder="Your own words. e.g. To breathe better, for my family, to be free..."
               className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] text-sm placeholder:text-[#6a5340]"
             />
-            <p className="text-xs text-amber-300 mt-1">Shown to you in the middle of an urge — when it matters most.</p>
+            <p className="text-xs text-amber-300 mt-1">Shown during urges.</p>
           </div>
 
           <div>
@@ -115,7 +115,6 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
               placeholder="e.g. 11"
               className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] placeholder:text-[#6a5340]"
             />
-            <p className="text-xs text-amber-300 mt-1">Shows how much money you've saved since quitting.</p>
           </div>
 
           {costPerDay.trim() !== '' && (
@@ -138,7 +137,6 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
                   className="w-24 p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] placeholder:text-[#6a5340]"
                 />
               </div>
-              <p className="text-xs text-amber-300 mt-1">Something concrete your saved money is buying you.</p>
             </div>
           )}
 

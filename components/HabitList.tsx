@@ -51,7 +51,6 @@ const HabitList: React.FC<HabitListProps> = ({ habits, completions, viewingDate,
     limitReached ? (
       <div className="text-center p-4 bg-[#6a5340] border-4 border-dashed border-yellow-700 text-yellow-200 mt-4 shadow-[8px_8px_0px_#1a1515]">
         <p className="font-bold">Daily Habit Limit Reached</p>
-        <p className="text-sm mt-1">You can change this in Settings.</p>
       </div>
     ) : (
       <button 
@@ -69,8 +68,7 @@ const HabitList: React.FC<HabitListProps> = ({ habits, completions, viewingDate,
       <>
         <div className="text-center border-4 border-dashed border-[#6a5340] p-10 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
           <p className="text-xl text-[#f0e9d6]">Your adventure awaits!</p>
-          <p className="mt-2 text-[#b0a08f]">Click "New Habit" to add your first quest.</p>
-        </div>
+          </div>
         {AddNewHabitButton}
       </>
     );
@@ -80,8 +78,7 @@ const HabitList: React.FC<HabitListProps> = ({ habits, completions, viewingDate,
      return (
       <>
         <div className="text-center border-4 border-dashed border-[#6a5340] p-10 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
-          <p className="text-xl text-[#f0e9d6]">No habits scheduled for this day.</p>
-          <p className="mt-2 text-[#b0a08f]">Enjoy your rest day! You've earned it.</p>
+          <p className="text-xl text-[#f0e9d6]">Rest day.</p>
         </div>
         {AddNewHabitButton}
       </>

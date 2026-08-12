@@ -1,11 +1,13 @@
-import { Badge, PlayerProfile, Habit, Completion, CompletionStatus, HabitCategory, BadgeTier, Quit } from '../types';
+import { Badge, BadgeContext, PlayerProfile, Habit, Completion, CompletionStatus, HabitCategory, BadgeTier, Quit, Task } from '../types';
 import { differenceInCalendarDays, isSameDay, format } from 'date-fns';
 import { totalCleanDays } from './quits';
+import { RESCUE_THRESHOLD_DAYS } from './tasks';
 
 // Import existing icons
 import { FirstStepIcon } from '../components/icons/FirstStepIcon';
 import { LevelIcon } from '../components/icons/LevelIcon';
 import { StreakIcon } from '../components/icons/StreakIcon';
+import { HourglassIcon } from '../components/icons/TaskIcons';
 import { EarlyBirdIcon } from '../components/icons/EarlyBirdIcon';
 import { NightOwlIcon } from '../components/icons/NightOwlIcon';
 import { ComebackKingIcon } from '../components/icons/ComebackKingIcon';
@@ -46,7 +48,7 @@ export const BADGE_CATALOG: Badge[] = [
     tiers: [{
         tier: 1, name: 'First Step', description: 'Create your first habit! The journey begins.', target: 1, xpReward: 25 
     }],
-    getProgress: (p, habits) => habits.length,
+    getProgress: ({ habits }) => habits.length,
   },
   {
     id: 'habit-collector',
@@ -57,7 +59,7 @@ export const BADGE_CATALOG: Badge[] = [
       { tier: 2, name: 'Collector (Silver)', description: 'Create 10 different habits.', target: 10, xpReward: 100 },
       { tier: 3, name: 'Collector (Gold)', description: 'Create 20 different habits.', target: 20, xpReward: 200 },
     ],
-    getProgress: (p, habits) => habits.length,
+    getProgress: ({ habits }) => habits.length,
   },
 
   // --- LEVEL-BASED ---
@@ -70,7 +72,7 @@ export const BADGE_CATALOG: Badge[] = [
       { tier: 2, name: 'Seasoned Explorer', description: 'You have reached Level 10. Impressive!', target: 10, xpReward: 100 },
       { tier: 3, name: 'Elite Champion', description: 'You have reached Level 20. A true legend!', target: 20, xpReward: 250 },
     ],
-    getProgress: (profile) => profile.level,
+    getProgress: ({ profile }) => profile.level,
   },
   
   // --- STREAK-BASED ---
@@ -84,7 +86,7 @@ export const BADGE_CATALOG: Badge[] = [
       { tier: 3, name: 'On Fire (Gold)', description: 'Achieve a 30-day streak.', target: 30, xpReward: 300 },
       { tier: 4, name: 'On Fire (Platinum)', description: 'Achieve a 100-day streak.', target: 100, xpReward: 1000 },
     ],
-    getProgress: (p, habits) => getMaxStreak(habits),
+    getProgress: ({ habits }) => getMaxStreak(habits),
   },
 
   // --- XP & DEDICATION ---
@@ -97,7 +99,7 @@ export const BADGE_CATALOG: Badge[] = [
         { tier: 2, name: 'Journeyman (Silver)', description: 'Earn 5,000 total XP.', target: 5000, xpReward: 150 },
         { tier: 3, name: 'Master (Gold)', description: 'Earn 20,000 total XP.', target: 20000, xpReward: 500 },
     ],
-    getProgress: (profile) => profile.totalXP,
+    getProgress: ({ profile }) => profile.totalXP,
   },
   {
     id: 'dedicated-player',
@@ -108,7 +110,7 @@ export const BADGE_CATALOG: Badge[] = [
         { tier: 2, name: 'Devoted (Silver)', description: 'Log activity on 30 unique days.', target: 30, xpReward: 200 },
         { tier: 3, name: 'Veteran (Gold)', description: 'Log activity on 100 unique days.', target: 100, xpReward: 600 },
     ],
-    getProgress: (p, h, completions) => getUniqueCompletionDays(completions),
+    getProgress: ({ completions }) => getUniqueCompletionDays(completions),
   },
   {
     id: 'quest-master',
@@ -119,7 +121,7 @@ export const BADGE_CATALOG: Badge[] = [
       { tier: 2, name: 'Quest Conqueror', description: 'Complete 50 daily quests.', target: 50, xpReward: 150 },
       { tier: 3, name: 'Quest Legend', description: 'Complete 150 daily quests.', target: 150, xpReward: 400 },
     ],
-    getProgress: (profile) => profile.totalQuestsCompleted || 0,
+    getProgress: ({ profile }) => profile.totalQuestsCompleted || 0,
   },
   
   // --- CATEGORY COMPLETION ---
@@ -132,7 +134,7 @@ export const BADGE_CATALOG: Badge[] = [
       { tier: 2, name: 'Health Enthusiast', description: 'Complete 50 Health habits.', target: 50, xpReward: 150 },
       { tier: 3, name: 'Health Guru', description: 'Complete 200 Health habits.', target: 200, xpReward: 400 },
     ],
-    getProgress: (p, h, c) => countCategoryCompletions(c, HabitCategory.HEALTH),
+    getProgress: ({ completions: c }) => countCategoryCompletions(c, HabitCategory.HEALTH),
   },
     {
     id: 'wellness-master',
@@ -143,7 +145,7 @@ export const BADGE_CATALOG: Badge[] = [
       { tier: 2, name: 'Wellness Enthusiast', description: 'Complete 50 Wellness habits.', target: 50, xpReward: 150 },
       { tier: 3, name: 'Wellness Guru', description: 'Complete 200 Wellness habits.', target: 200, xpReward: 400 },
     ],
-    getProgress: (p, h, c) => countCategoryCompletions(c, HabitCategory.WELLNESS),
+    getProgress: ({ completions: c }) => countCategoryCompletions(c, HabitCategory.WELLNESS),
   },
   {
     id: 'productivity-pro',
@@ -154,7 +156,7 @@ export const BADGE_CATALOG: Badge[] = [
       { tier: 2, name: 'Productivity Pro', description: 'Complete 50 Productivity habits.', target: 50, xpReward: 150 },
       { tier: 3, name: 'Productivity Sensei', description: 'Complete 200 Productivity habits.', target: 200, xpReward: 400 },
     ],
-    getProgress: (p, h, c) => countCategoryCompletions(c, HabitCategory.PRODUCTIVITY),
+    getProgress: ({ completions: c }) => countCategoryCompletions(c, HabitCategory.PRODUCTIVITY),
   },
   {
     id: 'lifestyle-master',
@@ -165,14 +167,14 @@ export const BADGE_CATALOG: Badge[] = [
       { tier: 2, name: 'Lifestyle Enthusiast', description: 'Complete 50 Lifestyle habits.', target: 50, xpReward: 150 },
       { tier: 3, name: 'Lifestyle Guru', description: 'Complete 200 Lifestyle habits.', target: 200, xpReward: 400 },
     ],
-    getProgress: (p, h, c) => countCategoryCompletions(c, HabitCategory.LIFESTYLE),
+    getProgress: ({ completions: c }) => countCategoryCompletions(c, HabitCategory.LIFESTYLE),
   },
   {
     id: 'generalist',
     baseName: 'Generalist',
     icon: GeneralistIcon,
     tiers: [{ tier: 1, name: 'Generalist', description: 'Have at least one active habit in all 4 categories.', target: 4, xpReward: 150 }],
-    getProgress: (p, habits) => {
+    getProgress: ({ habits }) => {
         const activeCategories = new Set(habits.filter(h => !h.isArchived).map(h => h.category));
         return activeCategories.size;
     },
@@ -184,21 +186,21 @@ export const BADGE_CATALOG: Badge[] = [
     baseName: 'Early Bird',
     icon: EarlyBirdIcon,
     tiers: [{ tier: 1, name: 'Early Bird', description: 'Complete 25 habits before 10 AM.', target: 25, xpReward: 100 }],
-    getProgress: (p, h, c) => c.filter(comp => comp.status === CompletionStatus.COMPLETED && new Date(comp.date).getHours() < 10).length,
+    getProgress: ({ completions: c }) => c.filter(comp => comp.status === CompletionStatus.COMPLETED && new Date(comp.date).getHours() < 10).length,
   },
   {
     id: 'night-owl',
     baseName: 'Night Owl',
     icon: NightOwlIcon,
     tiers: [{ tier: 1, name: 'Night Owl', description: 'Complete 25 habits after 8 PM.', target: 25, xpReward: 100 }],
-    getProgress: (p, h, c) => c.filter(comp => comp.status === CompletionStatus.COMPLETED && new Date(comp.date).getHours() >= 20).length,
+    getProgress: ({ completions: c }) => c.filter(comp => comp.status === CompletionStatus.COMPLETED && new Date(comp.date).getHours() >= 20).length,
   },
   {
     id: 'comeback-king',
     baseName: 'Comeback King',
     icon: ComebackKingIcon,
     tiers: [{ tier: 1, name: 'Comeback King', description: 'Resume a habit after a 3+ day break.', target: 1, xpReward: 120 }],
-    getProgress: (p, h, c) => {
+    getProgress: ({ completions: c }) => {
       const completed = c.filter(comp => comp.status === CompletionStatus.COMPLETED);
       const completionsByHabit = completed.reduce((acc, comp) => {
           if (!acc[comp.habitId]) acc[comp.habitId] = [];
@@ -226,7 +228,7 @@ export const BADGE_CATALOG: Badge[] = [
       { tier: 2, name: 'Resilient (Silver)', description: 'Recover a streak the day after missing a habit 5 times.', target: 5, xpReward: 150 },
       { tier: 3, name: 'Resilient (Gold)', description: 'Recover a streak the day after missing a habit 15 times.', target: 15, xpReward: 300 },
     ],
-    getProgress: (p, h, c) => {
+    getProgress: ({ completions: c }) => {
         const failedCompletions = c.filter(comp => comp.status === CompletionStatus.FAILED);
         const successfulCompletions = c.filter(comp => comp.status === CompletionStatus.COMPLETED);
         
@@ -265,7 +267,7 @@ export const BADGE_CATALOG: Badge[] = [
       { tier: 2, name: 'Iron Will (Silver)', description: 'Ride out 25 urges. The waves break on you now.', target: 25, xpReward: 200 },
       { tier: 3, name: 'Iron Will (Gold)', description: 'Ride out 100 urges. Unshakeable.', target: 100, xpReward: 500 },
     ],
-    getProgress: (p, h, c, quits = []) => quits.reduce((sum, q) => sum + q.urgesResisted, 0),
+    getProgress: ({ quits }) => quits.reduce((sum, q) => sum + q.urgesResisted, 0),
   },
   {
     id: 'boss-slayer',
@@ -277,7 +279,25 @@ export const BADGE_CATALOG: Badge[] = [
       { tier: 3, name: 'Boss Slayer (Gold)', description: 'Accumulate 90 total clean days.', target: 90, xpReward: 400 },
       { tier: 4, name: 'Boss Slayer (Platinum)', description: 'Accumulate 365 total clean days. Legendary.', target: 365, xpReward: 1000 },
     ],
-    getProgress: (p, h, c, quits = []) => quits.reduce((sum, q) => sum + totalCleanDays(q), 0),
+    getProgress: ({ quits }) => quits.reduce((sum, q) => sum + totalCleanDays(q), 0),
+  },
+
+  {
+    // The one honest badge in the task domain. Every other task count rewards
+    // ADDING tasks; this one takes elapsed time as its input, and you cannot
+    // fabricate a 30-day-old task — you can only wait 30 real days.
+    id: 'excavator',
+    baseName: 'Excavator',
+    icon: HourglassIcon,
+    tiers: [
+      { tier: 1, name: 'Excavator (Bronze)', description: 'Finish something you had been putting off for over a month.', target: 1, xpReward: 75 },
+      { tier: 2, name: 'Excavator (Silver)', description: 'Dig out 5 long-buried jobs.', target: 5, xpReward: 200 },
+      { tier: 3, name: 'Excavator (Gold)', description: 'Dig out 20. Nothing rots on your watch any more.', target: 20, xpReward: 500 },
+    ],
+    getProgress: ({ tasks }) => tasks.filter(t =>
+      t.completedAt &&
+      differenceInCalendarDays(new Date(t.completedAt), new Date(t.createdAt)) >= RESCUE_THRESHOLD_DAYS,
+    ).length,
   },
 
   {
@@ -285,7 +305,7 @@ export const BADGE_CATALOG: Badge[] = [
     baseName: 'Perfectionist',
     icon: PerfectionistIcon,
     tiers: [{ tier: 1, name: 'Perfectionist', description: 'Go a full 7 days without missing any scheduled habits.', target: 7, xpReward: 200 }],
-    getProgress: (p, h, c) => {
+    getProgress: ({ completions: c }) => {
       const lastFailureDate = c
         .filter(comp => comp.status === CompletionStatus.FAILED)
         .reduce((latest, comp) => {
@@ -305,17 +325,14 @@ export const BADGE_CATALOG: Badge[] = [
 ];
 
 export const checkAndUnlockBadges = (
-  profile: PlayerProfile,
-  habits: Habit[],
-  completions: Completion[],
+  ctx: BadgeContext,
   badgeCatalog: Badge[],
-  quits: Quit[] = []
 ): { newlyUnlocked: { badge: Badge; tier: BadgeTier }[] } => {
   const newlyUnlocked: { badge: Badge; tier: BadgeTier }[] = [];
 
   badgeCatalog.forEach(badge => {
-    const currentProgress = badge.getProgress(profile, habits, completions, quits);
-    const currentlyUnlockedTierNum = profile.unlockedBadges[badge.id] || 0;
+    const currentProgress = badge.getProgress(ctx);
+    const currentlyUnlockedTierNum = ctx.profile.unlockedBadges[badge.id] || 0;
 
     badge.tiers.forEach(tier => {
         if (tier.tier > currentlyUnlockedTierNum && currentProgress >= tier.target) {

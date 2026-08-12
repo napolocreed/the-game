@@ -16,11 +16,14 @@ import DayDetailModal from './components/DayDetailModal';
 import RestoreConflictModal from './components/RestoreConflictModal';
 import QuitBoard from './components/QuitBoard';
 import QuitChips from './components/QuitChips';
+import DailyProgressBanner from './components/DailyProgressBanner';
+import TodaysTaskCard from './components/TodaysTaskCard';
+import AddTaskModal from './components/AddTaskModal';
 import AddQuitModal from './components/AddQuitModal';
 import UrgeModal from './components/UrgeModal';
 import RelapseModal from './components/RelapseModal';
 import MilestoneModal from './components/MilestoneModal';
-import { Habit, Quit } from './types';
+import { Habit, Quit, Task } from './types';
 import * as serviceWorkerRegistration from './utils/serviceWorkerRegistration';
 import UpdateNotification from './components/UpdateNotification';
 
@@ -59,6 +62,15 @@ const App: React.FC = () => {
     quests,
     quits,
     dayNotes,
+    tasks,
+    dailyTask,
+    handleAddTask,
+    handleEditTask,
+    handleCompleteTask,
+    handlePushTask,
+    handleDropTask,
+    handleReopenTask,
+    handleDeleteTask,
     handleAddQuit,
     handleResistUrge,
     handleTagLastUrge,
@@ -128,6 +140,24 @@ const App: React.FC = () => {
   const [isAddQuitModalOpen, setIsAddQuitModalOpen] = useState(false);
   const [urgeQuit, setUrgeQuit] = useState<Quit | null>(null);
   const [relapseQuit, setRelapseQuit] = useState<Quit | null>(null);
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+  // The daily card's "see all" deep-links straight into the side-quest list.
+  const [questTab, setQuestTab] = useState<'today' | 'side'>('today');
+
+  // Android long-press shortcuts land here. A PWA cannot draw a home-screen
+  // widget — that manifest member is Windows-only — so the app-icon menu is
+  // the real deep-link surface on a phone.
+  useEffect(() => {
+    const go = new URLSearchParams(window.location.search).get('go');
+    if (!go) return;
+    if (go === 'habits') setActiveTab('habits');
+    if (go === 'battles') setActiveTab('battles');
+    if (go === 'sidequests') { setQuestTab('side'); setActiveTab('quests'); }
+    window.history.replaceState({}, '', window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const activeHabits = habits.filter(h => !h.isArchived);
   
@@ -154,9 +184,14 @@ const App: React.FC = () => {
               onToday={goToToday}
             />
             <QuitChips quits={quits} onClick={() => setActiveTab('battles')} />
+            <DailyProgressBanner
+              habits={activeHabits}
+              completions={completions}
+              viewingDate={viewingDate}
+            />
              { !isToday && !isViewingDateEditable && (
               <div className="text-center p-2 bg-yellow-900 border-y-2 border-yellow-700 text-yellow-200 text-sm mt-4">
-                Viewing a past day. Logging is disabled (48-hour limit).
+                Past day — logging locked (48h limit).
               </div>
             )}
             <div className="mt-6">
@@ -176,19 +211,34 @@ const App: React.FC = () => {
                 dailyHabitLimit={profile.settings?.dailyHabitLimit ?? null}
               />
             </div>
+            {isToday && (
+              <TodaysTaskCard
+                task={dailyTask}
+                onComplete={handleCompleteTask}
+                onPush={handlePushTask}
+                onOpenBoard={() => { setQuestTab('side'); setActiveTab('quests'); }}
+                allPushedToday={tasks.some(t => !t.completedAt && !t.droppedAt)}
+              />
+            )}
           </>
         );
       case 'quests':
-        const isViewingToday = isSameDay(viewingDate, new Date());
-        if (!isViewingToday) {
-            return (
-                <div className="text-center border-4 border-dashed border-[#6a5340] p-10 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515] mt-8">
-                    <p className="text-xl text-[#f0e9d6]">Quests are only available for today.</p>
-                    <p className="mt-2 text-[#b0a08f]">Navigate back to the current day to see your active quests.</p>
-                </div>
-            );
-        }
-        return <QuestBoard quests={quests} habits={activeHabits} />;
+        return (
+          <QuestBoard
+            quests={quests}
+            habits={activeHabits}
+            tasks={tasks}
+            key={questTab}
+            initialTab={questTab}
+            isToday={isSameDay(viewingDate, new Date())}
+            onAddTask={() => { setTaskToEdit(null); setIsAddTaskModalOpen(true); }}
+            onEditTask={task => { setTaskToEdit(task); setIsAddTaskModalOpen(true); }}
+            onCompleteTask={handleCompleteTask}
+            onDropTask={handleDropTask}
+            onReopenTask={handleReopenTask}
+            onDeleteTask={handleDeleteTask}
+          />
+        );
       case 'battles':
         return (
           <QuitBoard
@@ -203,7 +253,7 @@ const App: React.FC = () => {
       case 'calendar':
         return <CalendarView habits={habits} completions={completions} dayNotes={dayNotes} quits={quits} onDayClick={handleDayClick} />;
       case 'progress':
-        return <ProgressPage habits={habits} completions={completions} profile={profile} quits={quits} dayNotes={dayNotes} />;
+        return <ProgressPage habits={habits} completions={completions} profile={profile} quits={quits} dayNotes={dayNotes} tasks={tasks} />;
       default:
         return null;
     }
@@ -219,8 +269,8 @@ const App: React.FC = () => {
         confirmClass: "bg-orange-700 hover:bg-orange-600 border-orange-800 shadow-[4px_4px_0px_#7c2d12]",
         content: (
           <>
-            <p>Are you sure you want to archive "{habit.name}"?</p>
-            <p className="text-sm text-yellow-300 mt-2">It will be hidden from your daily list but its history will be saved.</p>
+            <p>Archive "{habit.name}"?</p>
+            <p className="text-sm text-yellow-300 mt-2">Hidden from your list. History kept.</p>
           </>
         )
       };
@@ -232,7 +282,7 @@ const App: React.FC = () => {
         confirmClass: "bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]",
         content: (
           <>
-            <p>Are you sure you want to permanently delete "{habit.name}"?</p>
+            <p>Delete "{habit.name}" forever?</p>
             <p className="text-sm text-red-400 mt-2">This action cannot be undone.</p>
           </>
         )
@@ -311,8 +361,7 @@ const App: React.FC = () => {
                 confirmText="Restore & Overwrite"
                 confirmClass="bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]"
             >
-                <p>Are you sure you want to restore from this backup?</p>
-                <p className="text-sm text-red-400 mt-2">This will permanently overwrite all your current data. This action cannot be undone.</p>
+                <p className="text-sm text-red-400 mt-2">Overwrites all current data. Cannot be undone.</p>
             </ConfirmModal>
        )}
        {recoveryData && (
@@ -350,7 +399,16 @@ const App: React.FC = () => {
         dayNote={selectedDate ? dayNotes[formatISO(selectedDate, { representation: 'date' })] : undefined}
         onSaveNote={handleSaveDayNote}
        />
-       <AddQuitModal
+       <AddTaskModal
+        isOpen={isAddTaskModalOpen}
+        editing={taskToEdit}
+        onClose={() => { setIsAddTaskModalOpen(false); setTaskToEdit(null); }}
+        onSubmit={data => {
+          if (taskToEdit) handleEditTask(taskToEdit.id, data);
+          else handleAddTask(data);
+        }}
+       />
+      <AddQuitModal
         isOpen={isAddQuitModalOpen}
         onClose={() => setIsAddQuitModalOpen(false)}
         onAddQuit={handleAddQuit}
@@ -385,7 +443,7 @@ const App: React.FC = () => {
                 confirmClass="bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]"
            >
                 <p>Permanently delete "{quitToDelete.name}" and all its history?</p>
-                <p className="text-sm text-red-400 mt-2">This cannot be undone. If you just want a break, pause it instead.</p>
+                <p className="text-sm text-red-400 mt-2">Cannot be undone. Pause it instead?</p>
            </ConfirmModal>
        )}
        {showUpdateNotification && <UpdateNotification onUpdate={handleUpdate} />}

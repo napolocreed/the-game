@@ -19,5 +19,28 @@
   "start_url": "./",
   "display": "standalone",
   "theme_color": "#2c2121",
-  "background_color": "#2c2121"
+  "background_color": "#2c2121",
+  "shortcuts": [
+    {
+      "name": "Today's board",
+      "short_name": "Today",
+      "description": "Your habits and today's side quest",
+      "url": "./?go=habits",
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Side quests",
+      "short_name": "Side quests",
+      "description": "The things you keep putting off",
+      "url": "./?go=sidequests",
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Boss fights",
+      "short_name": "Battles",
+      "description": "Your addiction trackers",
+      "url": "./?go=battles",
+      "icons": [{ "src": "logo.png", "sizes": "192x192" }]
+    }
+  ]
 }

@@ -39,7 +39,7 @@ const MoodTrendChart: React.FC<{ dayNotes: { [dateKey: string]: DayNote }; relap
   if (!hasMoodData) {
     return (
       <p className="text-sm text-[#b0a08f] text-center p-4">
-        Log your mood in the Calendar tab to see your 30-day trend here.
+        Log a mood in Calendar to see this.
       </p>
     );
   }
@@ -70,7 +70,9 @@ const MoodTrendChart: React.FC<{ dayNotes: { [dateKey: string]: DayNote }; relap
       </div>
       <div className="flex justify-between text-[10px] text-[#b0a08f] mt-1">
         <span>{format(days[0], 'MMM d')}</span>
-        <span className="text-red-400">▪ relapse</span>
+        <span className="flex items-center gap-1 text-red-400">
+          <span className="inline-block w-2 h-2 bg-red-600" /> relapse
+        </span>
         <span>Today</span>
       </div>
     </div>
@@ -90,7 +92,6 @@ const RecoverySection: React.FC<RecoverySectionProps> = ({ quits, dayNotes, habi
 
   return (
     <div>
-      <h3 className="text-xl text-white mb-4">⚔️ Recovery</h3>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <StatCard label="Total Clean Days" value={`${totals.cleanDays}`} />
@@ -111,7 +112,9 @@ const RecoverySection: React.FC<RecoverySectionProps> = ({ quits, dayNotes, habi
                 <div className="bg-[#3b9b73] h-full" style={{ width: `${record.winRate * 100}%` }} />
               </div>
               <p className="text-[10px] text-[#b0a08f] mt-1">
-                {record.urgesResisted} urges beaten · {record.relapses} slip{record.relapses === 1 ? '' : 's'} — most battles, you win.
+                {/* The old tail read "most battles, you win" unconditionally,
+                    which becomes a lie below a 50% rate. The number says it. */}
+                {record.urgesResisted} urges beaten · {record.relapses} slip{record.relapses === 1 ? '' : 's'}
               </p>
             </div>
           </div>
@@ -129,10 +132,10 @@ const RecoverySection: React.FC<RecoverySectionProps> = ({ quits, dayNotes, habi
             <HeartIcon className="w-5 h-5 text-[#f5b342] shrink-0" />
             <h4 className="text-lg text-white">Mood × Discipline</h4>
           </div>
-          <p className="text-[10px] text-[#b0a08f] mb-3">Average mood you logged, by how the day went (last 90 days)</p>
+          <p className="text-[10px] text-[#b0a08f] mb-3">Avg mood by day type · 90 days</p>
           <div className="space-y-2">
             {[
-              { label: `Days ≥50% habits done (${moodLink.activeDays})`, value: moodLink.activeAvg },
+              { label: `50%+ done (${moodLink.activeDays})`, value: moodLink.activeAvg },
               { label: `Quieter days (${moodLink.quietDays})`, value: moodLink.quietAvg },
             ].map(row => (
               <div key={row.label}>
@@ -148,7 +151,7 @@ const RecoverySection: React.FC<RecoverySectionProps> = ({ quits, dayNotes, habi
           </div>
           {moodLink.activeAvg > moodLink.quietAvg && (
             <p className="text-xs text-amber-300 mt-3">
-              Your logged mood is higher on days you keep your habits — the loop works both ways.
+              Mood is higher on habit days.
             </p>
           )}
         </div>
@@ -159,7 +162,7 @@ const RecoverySection: React.FC<RecoverySectionProps> = ({ quits, dayNotes, habi
           <h4 className="text-lg text-white mb-3">Know Your Enemy</h4>
           {triggers.length > 0 && (
             <div className="mb-3">
-              <p className="text-xs text-[#b0a08f] uppercase mb-2">Top triggers (urges + slips)</p>
+              <p className="text-xs text-[#b0a08f] uppercase mb-2">Top triggers</p>
               <div className="space-y-1">
                 {triggers.map(t => (
                   <div key={t.trigger} className="flex justify-between text-sm">
