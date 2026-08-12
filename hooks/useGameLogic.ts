@@ -12,7 +12,7 @@ import { QUIT_MILESTONES, URGE_RESIST_XP, URGE_XP_DAILY_CAP, dueMilestones } fro
 import { dayKey as taskDayKey, pickDailyTask, taskXp } from '../utils/tasks';
 import { SKINS, getSkin, DEFAULT_SKIN_ID } from '../utils/skinCatalog';
 import { applySkin } from '../utils/skins';
-import { livingStage } from '../utils/patina';
+import { resolveShownSkin, useSkinPreview } from './useSkinPreview';
 import { isUnlocked, seniorityDays, UnlockContext } from '../utils/skinUnlocks';
 
 // --- Push Notification Server ---
@@ -154,6 +154,7 @@ export const useGameLogic = () => {
   }, [profile.curveVersion, setProfile]);
 
   // --- Skins ---
+  const skinPreview = useSkinPreview();
   const unlockCtx: UnlockContext = {
     profile, habits, completions, quits, tasks, dayNotes,
     seniorityDays: seniorityDays(habits, quits, tasks, completions),
@@ -166,14 +167,14 @@ export const useGameLogic = () => {
   const activeSkin = getSkin(unlockedSkinIds.includes(activeSkinId) ? activeSkinId : DEFAULT_SKIN_ID);
 
   // A living skin keeps ageing after it is earned, so what gets painted
-  // depends on the account's age as well as which skin is worn.
-  const ageStage = activeSkin.unlock.kind === 'seniority'
-    ? livingStage(unlockCtx.seniorityDays, activeSkin.unlock.days)
-    : 0;
+  // depends on the account's age as well as which skin is worn — and, in the
+  // preview workshop, on an age the tester made up.
+  const { skin: shownSkin, stage: ageStage } =
+    resolveShownSkin(activeSkin, skinPreview, unlockCtx.seniorityDays);
 
   useEffect(() => {
-    applySkin(activeSkin, document.documentElement, ageStage);
-  }, [activeSkin, ageStage]);
+    applySkin(shownSkin, document.documentElement, ageStage);
+  }, [shownSkin, ageStage]);
 
   const newlyUnlockedSkins = SKINS.filter(
     s => unlockedSkinIds.includes(s.id) && !seenSkins.includes(s.id) && s.unlock.kind !== 'default',
@@ -1301,6 +1302,8 @@ export const useGameLogic = () => {
     dailyTask,
     skins: SKINS,
     activeSkin,
+    shownSkin,
+    skinPreview,
     unlockedSkinIds,
     newlyUnlockedSkins,
     acknowledgeSkins,

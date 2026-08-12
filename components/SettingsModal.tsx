@@ -1,6 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { PlayerProfile, Habit, PlayerSettings, Skin } from '../types';
 import SkinGallery from './SkinGallery';
+import SkinWorkshop from './SkinWorkshop';
+import { SkinPreview } from '../hooks/useSkinPreview';
 import { UnlockContext } from '../utils/skinUnlocks';
 import PixelatedButton from './PixelatedButton';
 import { RestoreIcon } from './icons/RestoreIcon';
@@ -33,6 +35,7 @@ interface SettingsModalProps {
   activeSkinId: string;
   unlockCtx: UnlockContext;
   onSelectSkin: (id: string) => void;
+  skinPreview: SkinPreview;
   onUpdateSettings: (settings: PlayerSettings) => void;
 }
 
@@ -43,8 +46,12 @@ const ToggleSwitch: React.FC<{ checked: boolean; onChange: (checked: boolean) =>
   </label>
 );
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile, habits, onRestore, onDelete, notificationPermission, onRequestPermission, onSendTestNotification, testNotifMessage, pushConfigured, pushEnabled, onTogglePush, pushStatusMessage, onExportData, onImportData, autoBackupEnabled, onToggleAutoBackup, lastAutoBackupDate, onUpdateSettings, skins, activeSkinId, unlockCtx, onSelectSkin }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile, habits, onRestore, onDelete, notificationPermission, onRequestPermission, onSendTestNotification, testNotifMessage, pushConfigured, pushEnabled, onTogglePush, pushStatusMessage, onExportData, onImportData, autoBackupEnabled, onToggleAutoBackup, lastAutoBackupDate, onUpdateSettings, skins, activeSkinId, unlockCtx, onSelectSkin, skinPreview }) => {
   const importInputRef = useRef<HTMLInputElement>(null);
+  // Seven taps on the level number opens the skin workshop. A gesture rather
+  // than a build flag so the catalogue can be reviewed on the real phone, in
+  // the installed app, where it will actually be looked at.
+  const [levelTaps, setLevelTaps] = useState(0);
   
   if (!isOpen) return null;
 
@@ -73,7 +80,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile,
             <div className="space-y-4 bg-inset border-2 border-frame p-4 mb-6">
                 <div className="flex justify-between items-center">
                     <p className="text-ink-dim">Player Level:</p>
-                    <p className="text-xl text-ink-hi font-bold">{profile.level}</p>
+                    <button
+                      onClick={() => {
+                        const next = levelTaps + 1;
+                        setLevelTaps(next);
+                        if (next >= 7) skinPreview.enableDevMode();
+                      }}
+                      className="text-xl text-ink-hi font-bold"
+                      aria-label={`Player level ${profile.level}`}
+                    >
+                      {profile.level}
+                    </button>
                 </div>
                 <div className="flex justify-between items-center">
                     <p className="text-ink-dim">Total XP:</p>
@@ -87,11 +104,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile,
 
             <div className="mb-6">
                 <h3 className="text-lg text-accent mb-2">Appearance</h3>
+                {skinPreview.devMode && (
+                  <div className="mb-3">
+                    <SkinWorkshop
+                      skins={skins}
+                      preview={skinPreview}
+                      realSeniorityDays={unlockCtx.seniorityDays}
+                    />
+                  </div>
+                )}
                 <SkinGallery
                   skins={skins}
                   activeSkinId={activeSkinId}
                   ctx={unlockCtx}
                   onSelect={onSelectSkin}
+                  previewId={skinPreview.devMode ? skinPreview.previewSkinId : null}
+                  onPreview={skinPreview.devMode ? skinPreview.setPreviewSkinId : undefined}
                 />
             </div>
 

@@ -14,6 +14,9 @@ interface SkinGalleryProps {
   activeSkinId: string;
   ctx: UnlockContext;
   onSelect: (id: string) => void;
+  /** Workshop mode: locked tiles become tappable and preview instead of wear. */
+  previewId?: string | null;
+  onPreview?: (id: string) => void;
 }
 
 const RARITY_LABEL: Record<SkinRarity, string> = {
@@ -71,7 +74,7 @@ const SkinPreview: React.FC<{ skin: Skin; locked: boolean }> = ({ skin, locked }
   </div>
 );
 
-const SkinGallery: React.FC<SkinGalleryProps> = ({ skins, activeSkinId, ctx, onSelect }) => {
+const SkinGallery: React.FC<SkinGalleryProps> = ({ skins, activeSkinId, ctx, onSelect, previewId, onPreview }) => {
   const [showLocked, setShowLocked] = useState(true);
 
   const rows = useMemo(() => {
@@ -106,17 +109,23 @@ const SkinGallery: React.FC<SkinGalleryProps> = ({ skins, activeSkinId, ctx, onS
 
       <div data-testid="skin-grid" className="grid grid-cols-2 pm:grid-cols-3 gap-2">
         {visible.map(({ skin, unlocked, progress }) => {
-          const active = skin.id === activeSkinId;
+          // In workshop mode a locked tile previews rather than wears, so the
+          // ladder still means something: nothing here grants a skin.
+          const tappable = unlocked || !!onPreview;
+          const active = previewId ? skin.id === previewId : skin.id === activeSkinId;
           return (
             <button
               key={skin.id}
-              onClick={() => unlocked && onSelect(skin.id)}
-              disabled={!unlocked}
+              onClick={() => {
+                if (unlocked && !onPreview) onSelect(skin.id);
+                else if (onPreview) onPreview(skin.id);
+              }}
+              disabled={!tappable}
               aria-pressed={active}
               title={unlocked ? skin.blurb : `${skin.name} — ${unlockLabel(skin.unlock)}`}
               className={`text-left p-1 border-2 transition-colors ${
                 active ? 'border-accent bg-raised' : 'border-frame-dim bg-inset'
-              } ${unlocked ? 'hover:bg-raised cursor-pointer' : 'cursor-not-allowed'}`}
+              } ${tappable ? 'hover:bg-raised cursor-pointer' : 'cursor-not-allowed'}`}
             >
               <div className="relative">
                 <SkinPreview skin={skin} locked={!unlocked} />

@@ -71,6 +71,8 @@ const App: React.FC = () => {
     acknowledgeSkins,
     selectSkin,
     unlockCtx,
+    shownSkin,
+    skinPreview,
     handleAddTask,
     handleEditTask,
     handleCompleteTask,
@@ -314,6 +316,16 @@ const App: React.FC = () => {
         <span className="fx-a" />
         <span className="fx-b" />
       </div>
+      {/* Previewing repaints the whole app, so it has to announce itself —
+          otherwise you eventually forget and think you own the thing. */}
+      {skinPreview.previewSkinId && (
+        <button
+          onClick={() => { skinPreview.setPreviewSkinId(null); skinPreview.setPreviewAgeDays(null); }}
+          className="fixed top-0 left-0 right-0 z-[10000] bg-warn text-canvas text-[10px] py-1 px-2 text-center"
+        >
+          Previewing {shownSkin.name} — tap to stop
+        </button>
+      )}
       <div className="max-w-4xl mx-auto">
         <Header profile={profile} onSettingsClick={() => setIsSettingsModalOpen(true)} />
         <main>
@@ -338,6 +350,7 @@ const App: React.FC = () => {
         badges={newlyUnlockedBadges}
       />
       <SettingsModal
+        skinPreview={skinPreview}
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         profile={profile}
