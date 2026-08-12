@@ -11,3 +11,11 @@ export const CATEGORY_HEX: { [key in HabitCategory]: string } = {
   [HabitCategory.PRODUCTIVITY]: '#d147af',
   [HabitCategory.LIFESTYLE]: '#3b9b73',
 };
+
+// Darker twin of each hue, for the hard drop shadow the pixel theme uses.
+export const CATEGORY_SHADOW_HEX: { [key in HabitCategory]: string } = {
+  [HabitCategory.HEALTH]: '#5e1c1c',
+  [HabitCategory.WELLNESS]: '#173d5e',
+  [HabitCategory.PRODUCTIVITY]: '#63174f',
+  [HabitCategory.LIFESTYLE]: '#164934',
+};

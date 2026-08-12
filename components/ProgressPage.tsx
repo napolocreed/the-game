@@ -108,10 +108,22 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
             <p className="text-[#b0a08f] text-center p-8">Create some habits to see their stats here!</p>
           ) : (
             <>
-              <p className="text-[10px] text-[#b0a08f] mb-3">
-                Last 30 days per habit — <span className="text-[#3b9b73]">▮ done</span>{' '}
-                <span className="text-[#c84141]">▖ failed</span>{' '}
-                <span className="text-[#8a7a68]">▗ skipped</span> · dark = missed
+              {/* Swatches are drawn, not typed: the pixel font has no block
+                  characters, so a "▮" would silently fall back to a smooth one. */}
+              <p className="text-[10px] text-[#b0a08f] mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span>Last 30 days per habit</span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-3 bg-[#3b9b73]" /> done
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-[6px] bg-[#c84141]" /> failed
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-[9px] bg-[#8a7a68]" /> skipped
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-3 bg-[#1f1717]" /> missed
+                </span>
               </p>
               <div className="space-y-4">
                 {activeHabitStats.map(stats => (

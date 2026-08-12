@@ -16,6 +16,7 @@ import DayDetailModal from './components/DayDetailModal';
 import RestoreConflictModal from './components/RestoreConflictModal';
 import QuitBoard from './components/QuitBoard';
 import QuitChips from './components/QuitChips';
+import DailyProgressBanner from './components/DailyProgressBanner';
 import AddQuitModal from './components/AddQuitModal';
 import UrgeModal from './components/UrgeModal';
 import RelapseModal from './components/RelapseModal';
@@ -154,6 +155,11 @@ const App: React.FC = () => {
               onToday={goToToday}
             />
             <QuitChips quits={quits} onClick={() => setActiveTab('battles')} />
+            <DailyProgressBanner
+              habits={activeHabits}
+              completions={completions}
+              viewingDate={viewingDate}
+            />
              { !isToday && !isViewingDateEditable && (
               <div className="text-center p-2 bg-yellow-900 border-y-2 border-yellow-700 text-yellow-200 text-sm mt-4">
                 Viewing a past day. Logging is disabled (48-hour limit).

@@ -11,16 +11,10 @@ import { FailIcon } from './icons/FailIcon';
 import { DuplicateIcon } from './icons/DuplicateIcon';
 import { ClockIcon } from './icons/ClockIcon';
 import { UndoIcon } from './icons/UndoIcon';
+import { StreakIcon } from './icons/StreakIcon';
+import { CATEGORY_ICONS } from './icons/CategoryIcons';
+import { CATEGORY_HEX, CATEGORY_SHADOW_HEX } from '../utils/categoryColors';
 import { formatTimeForDisplay } from '../utils/time';
-
-
-const FireIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M12.267 3.11a.75.75 0 01.264 1.042l-1.08 1.8a.75.75 0 00.316 1.056l3.626 2.092a.75.75 0 01-.53 1.348l-2.459-1.42a1.5 1.5 0 00-1.056.316l-1.8 1.08a.75.75 0 01-1.042-.264l-2.092-3.626a.75.75 0 011.348-.53l1.42 2.459a1.5 1.5 0 001.056-.316l1.08-1.8a.75.75 0 011.042-.264z" clipRule="evenodd" />
-        <path fillRule="evenodd" d="M9.166 3.818a.75.75 0 01.53-1.348l2.46 1.42a1.5 1.5 0 001.056-.316l1.8-1.08a.75.75 0 011.042.264l2.092 3.626a.75.75 0 01-1.348.53l-1.42-2.459a1.5 1.5 0 00-1.056.316l-1.8 1.08a.75.75 0 01-1.042-.264l-3.626-2.092a.75.75 0 01.264-1.042l1.08-1.8zM8.5 6.5a.5.5 0 01.5-.5h2a.5.5 0 010 1h-2a.5.5 0 01-.5-.5z" clipRule="evenodd" />
-        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM5.93 5.93a.75.75 0 011.06-1.06 6.5 6.5 0 11-1.06 1.06z" />
-    </svg>
-);
 
 
 interface HabitItemProps {
@@ -56,19 +50,9 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, todaysStatus, isEditable, 
   const canPerformAction = isEditable && !isActionTakenToday;
   const xpGained = calculateXP(habit);
 
-  const categoryColor = {
-    'Health': 'bg-red-700',
-    'Wellness': 'bg-blue-700',
-    'Productivity': 'bg-purple-700',
-    'Lifestyle': 'bg-green-700',
-  };
-
-  const categoryShadow = {
-    'Health': 'shadow-[4px_4px_0px_#4c1d1d]',
-    'Wellness': 'shadow-[4px_4px_0px_#1e3a8a]',
-    'Productivity': 'shadow-[4px_4px_0px_#581c87]',
-    'Lifestyle': 'shadow-[4px_4px_0px_#14532d]',
-  };
+  // Same validated hues as the charts — the old blue/purple pair was
+  // indistinguishable under deuteranopia, and the icon carries the identity too.
+  const CategoryIcon = CATEGORY_ICONS[habit.category];
 
   const baseContainerStyle = 'p-4 bg-[#4a3f36] border-4 border-[#8a6a4f] shadow-[8px_8px_0px_#1a1515] transition-all duration-200';
   const hoverStyle = 'hover:translate-x-1 hover:translate-y-1 hover:shadow-[4px_4px_0px_#1a1515]';
@@ -82,7 +66,16 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, todaysStatus, isEditable, 
       onDragStart={onDragStart}
     >
       <div className="flex items-start gap-3">
-        <span className={`px-2 py-1 text-xs text-white ${categoryColor[habit.category]} ${categoryShadow[habit.category]} shrink-0`}>{habit.category}</span>
+        <span
+          className="flex items-center gap-1.5 px-2 py-1 text-xs text-white shrink-0"
+          style={{
+            backgroundColor: CATEGORY_HEX[habit.category],
+            boxShadow: `4px 4px 0px ${CATEGORY_SHADOW_HEX[habit.category]}`,
+          }}
+        >
+          <CategoryIcon className="w-3 h-3" />
+          {habit.category}
+        </span>
         <p className={`flex-1 text-lg text-[#f0e9d6] break-words min-w-0 ${todaysStatus === CompletionStatus.COMPLETED ? 'line-through' : ''}`}>{habit.name}</p>
       </div>
       
@@ -90,7 +83,7 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, todaysStatus, isEditable, 
         <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm">
           {habit.streak > 0 && (
             <div className="flex items-center text-orange-400 font-bold" title={`${habit.streak} day streak`}>
-              <FireIcon />
+              <StreakIcon className="w-4 h-4" />
               <span className="ml-1">{habit.streak} Day Streak</span>
             </div>
           )}

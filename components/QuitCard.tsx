@@ -5,6 +5,7 @@ import PixelatedButton from './PixelatedButton';
 import ProgressBar from './ProgressBar';
 import { ArchiveIcon } from './icons/ArchiveIcon';
 import { TrashIcon } from './icons/TrashIcon';
+import { ChevronDownIcon } from './icons/ChevronDownIcon';
 import { format } from 'date-fns';
 
 interface QuitCardProps {
@@ -131,7 +132,7 @@ const QuitCard: React.FC<QuitCardProps> = ({ quit, onResistUrge, onRelapse, onAr
             className="w-full text-left text-xs text-[#b0a08f] hover:text-white flex justify-between items-center"
           >
             <span>📜 Battle log</span>
-            <span>{showLog ? '▲' : '▼'}</span>
+            <ChevronDownIcon className={`w-4 h-4 shrink-0 ${showLog ? 'scale-y-[-1]' : ''}`} />
           </button>
           {showLog && (
             <div className="mt-3 space-y-2">

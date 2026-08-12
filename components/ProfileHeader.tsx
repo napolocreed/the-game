@@ -18,7 +18,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
             <div className="w-16 h-16 bg-[#2c2121] border-4 border-[#8a6a4f] flex items-center justify-center">
               <span className="text-3xl text-yellow-400 font-bold">{profile.level}</span>
             </div>
-             <LevelUpIcon className="absolute -top-3 -right-3 w-8 h-8 text-yellow-400 transform rotate-12" />
+             <LevelUpIcon className="absolute -top-3 -right-3 w-8 h-8 text-yellow-400" />
           </div>
           <div>
             <h2 className="text-xl text-white">Player Level</h2>

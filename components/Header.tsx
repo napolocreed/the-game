@@ -23,7 +23,7 @@ const Header: React.FC<HeaderProps> = ({ profile, onSettingsClick }) => {
                     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#2c2121] border-2 sm:border-4 border-[#8a6a4f] flex items-center justify-center">
                     <span className="text-xl sm:text-2xl text-yellow-400 font-bold">{profile.level}</span>
                     </div>
-                    <LevelUpIcon className="absolute -top-2 -right-2 w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 transform rotate-12" />
+                    <LevelUpIcon className="absolute -top-2 -right-2 w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" />
                 </div>
                 <div className="w-full hidden sm:block">
                     <ProgressBar 

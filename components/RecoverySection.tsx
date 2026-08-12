@@ -70,7 +70,9 @@ const MoodTrendChart: React.FC<{ dayNotes: { [dateKey: string]: DayNote }; relap
       </div>
       <div className="flex justify-between text-[10px] text-[#b0a08f] mt-1">
         <span>{format(days[0], 'MMM d')}</span>
-        <span className="text-red-400">▪ relapse</span>
+        <span className="flex items-center gap-1 text-red-400">
+          <span className="inline-block w-2 h-2 bg-red-600" /> relapse
+        </span>
         <span>Today</span>
       </div>
     </div>
@@ -132,7 +134,7 @@ const RecoverySection: React.FC<RecoverySectionProps> = ({ quits, dayNotes, habi
           <p className="text-[10px] text-[#b0a08f] mb-3">Average mood you logged, by how the day went (last 90 days)</p>
           <div className="space-y-2">
             {[
-              { label: `Days ≥50% habits done (${moodLink.activeDays})`, value: moodLink.activeAvg },
+              { label: `Days 50%+ habits done (${moodLink.activeDays})`, value: moodLink.activeAvg },
               { label: `Quieter days (${moodLink.quietDays})`, value: moodLink.quietAvg },
             ].map(row => (
               <div key={row.label}>
