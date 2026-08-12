@@ -1,5 +1,6 @@
 import { Skin } from '../types';
 import { buildSkin, SkinSpec } from './skins';
+import { MATERIALS } from './patina';
 import { CLASSIC } from './theme';
 
 /**
@@ -92,6 +93,7 @@ const SPECS: SkinSpec[] = [
     ink: '#e6e9ed',
     good: '#4a8f6d',
     xp: '#b9a6e6',
+    material: MATERIALS.stone,
   },
   {
     id: 'parchment',
@@ -111,6 +113,7 @@ const SPECS: SkinSpec[] = [
     xp: '#6a3fa0',
     info: '#1f6b7a',
     title: '#7a3f14',
+    material: MATERIALS.paper,
   },
   {
     id: 'orchid',
@@ -125,6 +128,7 @@ const SPECS: SkinSpec[] = [
     ink: '#ece3f7',
     good: '#3f8f78',
     xp: '#ffd6a5',
+    material: MATERIALS.cloth,
   },
   {
     id: 'rust',
@@ -153,6 +157,7 @@ const SPECS: SkinSpec[] = [
     good: '#2f9a7a',
     miss: '#96622a',
     info: '#8fd8ff',
+    material: MATERIALS.glass,
   },
   {
     id: 'sakura',
@@ -167,6 +172,7 @@ const SPECS: SkinSpec[] = [
     ink: '#f7e4ec',
     good: '#5a9a72',
     xp: '#c9a8ff',
+    material: MATERIALS.cloth,
   },
   {
     id: 'gilded',
@@ -181,7 +187,7 @@ const SPECS: SkinSpec[] = [
     ink: '#f7efd9',
     good: '#4f8f52',
     title: '#ffc94a',
-    material: { shadowFar: '8px 8px 0px', shadowNear: '4px 4px 0px' },
+    material: MATERIALS.metal,
   },
   {
     id: 'obsidian',
@@ -198,6 +204,7 @@ const SPECS: SkinSpec[] = [
     danger: '#e0344a',
     xp: '#9d7bff',
     info: '#4fd6ff',
+    material: MATERIALS.glass,
   },
   {
     id: 'aurora',
@@ -215,6 +222,7 @@ const SPECS: SkinSpec[] = [
     xp: '#b48cff',
     info: '#6fe0ff',
     title: '#a8ffe0',
+    material: MATERIALS.crt,
   },
 
   // -------------------------------------------------------------- the feats
@@ -306,6 +314,7 @@ const SPECS: SkinSpec[] = [
     ink: '#eef3f8',
     good: '#3f8f7a',
     xp: '#a8b8ff',
+    material: MATERIALS.metal,
   },
   {
     id: 'archivist',
@@ -318,6 +327,7 @@ const SPECS: SkinSpec[] = [
     frame: '#8a7550',
     accent: '#e0c98a',
     ink: '#f0e8db',
+    material: MATERIALS.paper,
   },
   {
     id: 'sober-sky',

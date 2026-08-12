@@ -63,10 +63,40 @@
 
   --scrim: rgba(0, 0, 0, 0.75);
 
-  /* Material: depth is a skin parameter, so a flatter skin can soften the
-     whole app without touching a single component. */
+  /* Material: depth, frame weight and surface are skin parameters, so a
+     flatter or grainier skin can change the whole app without touching a
+     single component. */
   --shadow-far: 8px 8px 0px;
   --shadow-near: 4px 4px 0px;
+  --border-w: 4px;
+  --texture: none;
+  --overlay: none;
+}
+
+/* --- Skin material -------------------------------------------------------
+   The texture layers over the page colour and under everything else; the
+   overlay (vignette, cracks, creeping plants) sits above the whole interface,
+   modals included, and never takes a click. Both default to `none`, so a skin
+   that declares no material costs nothing. */
+body,
+.skin-texture {
+  background-image: var(--texture);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: var(--overlay);
+}
+
+/* The pixel frame's weight is part of a skin's material — stone is heavier
+   than paper. Scoped to :root so it outranks the utility without needing a
+   layer, and a no-op at the default 4px. */
+:root .border-4 {
+  border-width: var(--border-w);
 }
 
 /* Press Start 2P (OFL) self-hosted: no Google Fonts dependency, works offline

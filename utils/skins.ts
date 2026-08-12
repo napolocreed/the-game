@@ -2,6 +2,7 @@ import React from 'react';
 import { Skin, SkinMaterial, SkinRarity, SkinUnlock } from '../types';
 import { CLASSIC, SkinTokens, TOKEN_KEYS, cssVar } from './theme';
 import { contrast, ensureContrast, isDark, lighten, mix, ramp, saturate } from './color';
+import { patina } from './patina';
 
 /**
  * The compact form a skin is written in.
@@ -170,12 +171,18 @@ export const resolveTokens = (skin: Skin | null): SkinTokens => {
   return out;
 };
 
-/** Apply a skin to the document: colours first, then its material. */
-export const applySkin = (skin: Skin | null, root: HTMLElement): void => {
+/**
+ * Apply a skin to the document: colours first, then its material.
+ *
+ * `stage` is how far a living skin has aged (0..1) and is ignored by every
+ * other skin. It is passed in rather than read here so this stays a pure
+ * function of its arguments — the same age always paints the same screen.
+ */
+export const applySkin = (skin: Skin | null, root: HTMLElement, stage = 0): void => {
   const tokens = resolveTokens(skin);
   for (const k of TOKEN_KEYS) root.style.setProperty(cssVar(k), tokens[k]);
 
-  const m = skin?.material;
+  const m = skin?.livingId ? patina(skin.livingId, stage, skin.material) : skin?.material;
   root.style.setProperty('--shadow-far', m?.shadowFar ?? '8px 8px 0px');
   root.style.setProperty('--shadow-near', m?.shadowNear ?? '4px 4px 0px');
   root.style.setProperty('--border-w', `${m?.borderWidth ?? 4}px`);
@@ -185,11 +192,17 @@ export const applySkin = (skin: Skin | null, root: HTMLElement): void => {
 };
 
 /** Inline style object for a preview swatch, no document mutation. */
-export const previewStyle = (skin: Skin): React.CSSProperties => {
+export const previewStyle = (skin: Skin, stage = 1): React.CSSProperties => {
   const tokens = resolveTokens(skin);
   const style: Record<string, string> = {};
   for (const k of TOKEN_KEYS) style[cssVar(k)] = tokens[k];
-  style['--shadow-far'] = skin.material?.shadowFar ?? '8px 8px 0px';
-  style['--shadow-near'] = skin.material?.shadowNear ?? '4px 4px 0px';
+  // Material too, so a preview sells the surface and not just the palette —
+  // and so a stone skin's swatch is not framed in the border weight of
+  // whatever skin happens to be worn right now.
+  const m = skin.livingId ? patina(skin.livingId, stage, skin.material) : skin.material;
+  style['--shadow-far'] = m?.shadowFar ?? '8px 8px 0px';
+  style['--shadow-near'] = m?.shadowNear ?? '4px 4px 0px';
+  style['--border-w'] = `${m?.borderWidth ?? 4}px`;
+  style['--texture'] = m?.texture ?? 'none';
   return style as React.CSSProperties;
 };

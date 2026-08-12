@@ -50,7 +50,7 @@ const SkinUnlockModal: React.FC<SkinUnlockModalProps> = ({ skins, activeSkinId, 
         <h2 className="text-lg pm:text-2xl text-accent mt-1 break-words">{skin.name}</h2>
         <p className="text-[10px] text-ink-faint mt-1">{unlockLabel(skin.unlock)}</p>
 
-        <div className="bg-canvas border-2 border-frame p-3 my-4">
+        <div className="skin-texture bg-canvas border-2 border-frame p-3 my-4">
           <div className="bg-surface border-2 border-frame p-2 shadow-hard-xs text-left">
             <div className="flex items-center gap-2">
               <span className="w-4 h-4 bg-cat-health shrink-0" />

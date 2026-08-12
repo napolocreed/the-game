@@ -12,6 +12,7 @@ import { QUIT_MILESTONES, URGE_RESIST_XP, URGE_XP_DAILY_CAP, dueMilestones } fro
 import { dayKey as taskDayKey, pickDailyTask, taskXp } from '../utils/tasks';
 import { SKINS, getSkin, DEFAULT_SKIN_ID } from '../utils/skinCatalog';
 import { applySkin } from '../utils/skins';
+import { livingStage } from '../utils/patina';
 import { isUnlocked, seniorityDays, UnlockContext } from '../utils/skinUnlocks';
 
 // --- Push Notification Server ---
@@ -164,9 +165,15 @@ export const useGameLogic = () => {
   // something never earned.
   const activeSkin = getSkin(unlockedSkinIds.includes(activeSkinId) ? activeSkinId : DEFAULT_SKIN_ID);
 
+  // A living skin keeps ageing after it is earned, so what gets painted
+  // depends on the account's age as well as which skin is worn.
+  const ageStage = activeSkin.unlock.kind === 'seniority'
+    ? livingStage(unlockCtx.seniorityDays, activeSkin.unlock.days)
+    : 0;
+
   useEffect(() => {
-    applySkin(activeSkin, document.documentElement);
-  }, [activeSkin]);
+    applySkin(activeSkin, document.documentElement, ageStage);
+  }, [activeSkin, ageStage]);
 
   const newlyUnlockedSkins = SKINS.filter(
     s => unlockedSkinIds.includes(s.id) && !seenSkins.includes(s.id) && s.unlock.kind !== 'default',
