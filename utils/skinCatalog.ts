@@ -20,6 +20,21 @@ import { CLASSIC } from './theme';
  *     the ones that visibly age with the account.
  */
 
+/**
+ * The starting palette, reused verbatim by every seniority skin.
+ *
+ * Spread rather than referenced so those skins stay ordinary specs that the
+ * builder and the contrast validator treat like any other.
+ */
+const TAVERN = {
+  canvas: CLASSIC.canvas,
+  surface: CLASSIC.surface,
+  frame: CLASSIC.frame,
+  accent: CLASSIC.accent,
+  ink: CLASSIC.ink,
+  tokens: { ...CLASSIC },
+} as const;
+
 const SPECS: SkinSpec[] = [
   // ---------------------------------------------------------------- default
   {
@@ -681,93 +696,65 @@ const SPECS: SkinSpec[] = [
   },
 
   // --------------------------------------------------------- the long haul
-  // These are the ones that cannot be bought. They only arrive by staying.
+  // These cannot be bought. They only arrive by staying — and they are all the
+  // SAME room, the one you started in, at six different ages. Nothing here
+  // changes a single colour: the tavern is exactly the tavern, and what you get
+  // for the years is the moss on the sill and the crack across the frame.
+  // Giving each its own palette, which is what this used to do, turned one
+  // story about staying into six unrelated paint jobs.
   {
     id: 'sapling',
     name: 'Sapling',
-    blurb: 'A month in. Something is definitely growing.',
+    blurb: 'A month in. Something green has come up by the door.',
     rarity: 'common',
     unlock: { kind: 'seniority', days: 30 },
-    canvas: '#161f18',
-    surface: '#243024',
-    frame: '#4f6f47',
-    accent: '#b8e08a',
-    ink: '#e4eedc',
-    good: '#4a8f52',
-    livingId: 'overgrown',
+    ...TAVERN,
+    patina: { plants: 0.2 },
   },
   {
     id: 'weathered',
     name: 'Weathered',
-    blurb: 'A season in. The paint has started to settle.',
+    blurb: 'A season. The paint has started to craze.',
     rarity: 'rare',
     unlock: { kind: 'seniority', days: 90 },
-    canvas: '#26201a',
-    surface: '#3b3128',
-    frame: '#7f6a4f',
-    accent: '#e8c07a',
-    ink: '#efe6d8',
-    livingId: 'weathered',
+    ...TAVERN,
+    patina: { plants: 0.34, cracks: 0.32, varnish: 0.12 },
   },
   {
     id: 'overgrown',
     name: 'Overgrown',
-    blurb: 'Half a year. Something has taken root in the corners.',
+    blurb: 'Half a year, and the garden has stopped asking permission.',
     rarity: 'epic',
     unlock: { kind: 'seniority', days: 182 },
-    canvas: '#1a2118',
-    surface: '#2b3626',
-    frame: '#5f7a4a',
-    accent: '#a8d96a',
-    ink: '#e6efdc',
-    good: '#4a8f52',
-    livingId: 'overgrown',
+    ...TAVERN,
+    patina: { plants: 0.78, cracks: 0.4, varnish: 0.15 },
   },
   {
     id: 'heirloom',
     name: 'Heirloom',
-    blurb: 'One year. The frame has cracked, and held.',
+    blurb: 'A year. Cracked, darkened, and clearly looked after.',
     rarity: 'legend',
     unlock: { kind: 'seniority', days: 365 },
-    canvas: '#1f1a15',
-    surface: '#332a20',
-    frame: '#9a7f4f',
-    accent: '#ffd98a',
-    ink: '#f5ecd9',
-    title: '#ffcf6a',
-    livingId: 'heirloom',
-  },
-  {
-    id: 'cathedral',
-    name: 'Cathedral',
-    blurb: 'Three years. Light through glass that outlived everyone who cut it.',
-    rarity: 'legend',
-    unlock: { kind: 'seniority', days: 1095 },
-    canvas: '#12111a',
-    surface: '#1e1c2c',
-    frame: '#5f5480',
-    accent: '#e0c48a',
-    ink: '#ece8f2',
-    good: '#3f8f72',
-    xp: '#b39aff',
-    info: '#7fc9e8',
-    title: '#ffd9a0',
-    livingId: 'heirloom',
-    material: { fx: FX.motes },
+    ...TAVERN,
+    patina: { plants: 0.5, cracks: 0.62, varnish: 0.8, dust: 0.25 },
   },
   {
     id: 'monument',
     name: 'Monument',
-    blurb: 'Two years. Stone, moss, and the marks of weather.',
+    blurb: 'Two years. Still standing, and the weather knows it.',
     rarity: 'legend',
     unlock: { kind: 'seniority', days: 730 },
-    canvas: '#191b1a',
-    surface: '#282d2b',
-    frame: '#6a7a72',
-    accent: '#bfd8c8',
-    ink: '#e8eeea',
-    good: '#4a8f6a',
-    livingId: 'monument',
+    ...TAVERN,
+    patina: { plants: 0.88, cracks: 0.92, varnish: 0.35, dust: 0.35 },
+  },
+  {
+    id: 'cathedral',
+    name: 'Cathedral',
+    blurb: 'Three years. Dust in the light, and nobody left who built it.',
+    rarity: 'legend',
+    unlock: { kind: 'seniority', days: 1095 },
+    ...TAVERN,
+    patina: { plants: 1, cracks: 1, varnish: 0.6, dust: 0.8 },
   },
 ];
 

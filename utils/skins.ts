@@ -1,5 +1,5 @@
 import React from 'react';
-import { Skin, SkinFxLayer, SkinMaterial, SkinRarity, SkinUnlock } from '../types';
+import { PatinaSpec, Skin, SkinFxLayer, SkinMaterial, SkinRarity, SkinUnlock } from '../types';
 import { CLASSIC, SkinTokens, TOKEN_KEYS, cssVar } from './theme';
 import { contrast, ensureContrast, isDark, lighten, mix, ramp, saturate } from './color';
 import { patina } from './patina';
@@ -47,7 +47,7 @@ export interface SkinSpec {
   categories?: [string, string, string, string];
 
   material?: SkinMaterial;
-  livingId?: string;
+  patina?: PatinaSpec;
   /** Escape hatch for anything derivation gets wrong. */
   tokens?: Partial<Record<keyof SkinTokens, string>>;
 }
@@ -157,7 +157,7 @@ export const buildSkin = (spec: SkinSpec): Skin => {
     unlock: spec.unlock,
     tokens,
     material: spec.material,
-    livingId: spec.livingId,
+    patina: spec.patina,
   };
 };
 
@@ -182,7 +182,7 @@ export const applySkin = (skin: Skin | null, root: HTMLElement, stage = 0): void
   const tokens = resolveTokens(skin);
   for (const k of TOKEN_KEYS) root.style.setProperty(cssVar(k), tokens[k]);
 
-  const m = skin?.livingId ? patina(skin.livingId, stage, skin.material) : skin?.material;
+  const m = skin?.patina ? patina(skin.patina, stage, skin.material) : skin?.material;
   root.style.setProperty('--shadow-far', m?.shadowFar ?? '8px 8px 0px');
   root.style.setProperty('--shadow-near', m?.shadowNear ?? '4px 4px 0px');
   root.style.setProperty('--border-w', `${m?.borderWidth ?? 4}px`);
@@ -216,7 +216,7 @@ export const previewStyle = (skin: Skin, stage = 1): React.CSSProperties => {
   // Material too, so a preview sells the surface and not just the palette —
   // and so a stone skin's swatch is not framed in the border weight of
   // whatever skin happens to be worn right now.
-  const m = skin.livingId ? patina(skin.livingId, stage, skin.material) : skin.material;
+  const m = skin.patina ? patina(skin.patina, stage, skin.material) : skin.material;
   style['--shadow-far'] = m?.shadowFar ?? '8px 8px 0px';
   style['--shadow-near'] = m?.shadowNear ?? '4px 4px 0px';
   style['--border-w'] = `${m?.borderWidth ?? 4}px`;
@@ -224,5 +224,9 @@ export const previewStyle = (skin: Skin, stage = 1): React.CSSProperties => {
   // A still frame of the skin's weather, so the gallery can show that this one
   // moves without every tile having to animate.
   style['--fx-still'] = m?.fx?.a.image ?? 'none';
+  // The seniority skins are all the same palette, so the patina is the ONLY
+  // thing that tells them apart — it has to be in the tile or the gallery shows
+  // six identical browns.
+  style['--skin-overlay'] = m?.overlay ?? 'none';
   return style as React.CSSProperties;
 };

@@ -1,4 +1,4 @@
-import { SkinFx, SkinMaterial } from '../types';
+import { PatinaSpec, SkinFx, SkinMaterial } from '../types';
 
 /**
  * Ageing effects for the "living" skins.
@@ -244,47 +244,62 @@ const vignette = (alpha: number, tint: string): string =>
 export const livingStage = (seniorityDays: number, unlockDays: number): number =>
   clamp01((seniorityDays - unlockDays) / Math.max(1, unlockDays));
 
-/** The material a living skin wears at this stage, merged over its own. */
-export const patina = (livingId: string, stage: number, base?: SkinMaterial): SkinMaterial => {
-  const s = clamp01(stage);
+/**
+ * The material a seniority skin wears, given its spec and how far it has
+ * matured past its unlock.
+ *
+ * The seniority skins are the SAME tavern, not six different rooms. They all
+ * carry the default palette and differ only in how far the place has gone: a
+ * few sprouts at a month, hairline cracks at three, the walls taken at six,
+ * varnish and dust at a year, ruin at two. Giving each one its own colours —
+ * which is what this used to do — turned a single story about staying into six
+ * unrelated paint jobs.
+ *
+ * `stage` never restarts it from nothing: a skin is already convincing the day
+ * you earn it (55% of its spec) and keeps filling in from there, so the reward
+ * is visible immediately and still moving a year later.
+ */
+export const patina = (spec: PatinaSpec, stage: number, base?: SkinMaterial): SkinMaterial => {
+  const grown = 0.55 + 0.45 * clamp01(stage);
+  const at = (n = 0) => clamp01(n) * grown;
+
+  const plants = at(spec.plants);
+  const crack = at(spec.cracks);
+  const varnish = at(spec.varnish);
+  const dust = at(spec.dust);
+
   const m: SkinMaterial = { ...base };
   const layers: string[] = [];
+  const textures: string[] = [];
 
-  switch (livingId) {
-    case 'weathered': {
-      // Paint that has been out in the weather: grain first, then cracks that
-      // multiply as the years pass.
-      m.texture = [grain(0.05 + s * 0.05, 0.9), base?.texture].filter(Boolean).join(', ');
-      layers.push(cracks(s, '#1b1512', 7, 0.5));
-      layers.push(vignette(0.10 + s * 0.14, 'rgba(20,16,14,ALPHA)'));
-      break;
-    }
-    case 'overgrown': {
-      const v = vines(s, '#3f6b34', '#5f9a44', '#2f5228', '#c9d97a');
-      m.texture = grain(0.05, 1.1);
-      // Rooted at the bottom edge and repeating across it: a hedge line, not a
-      // pattern spread over the content.
-      layers.push(`${v.image} bottom left / ${v.width}px ${v.height}px repeat-x`);
-      layers.push(vignette(0.08 + s * 0.10, 'rgba(14,26,14,ALPHA)'));
-      break;
-    }
-    case 'heirloom': {
-      m.texture = [craquelure(0.02 + s * 0.03), grain(0.05, 0.7)].join(', ');
-      layers.push(cracks(s * 0.7, '#2a1c0c', 4, 0.35));
-      layers.push(vignette(0.14 + s * 0.20, 'rgba(46,28,8,ALPHA)'));
-      break;
-    }
-    case 'monument': {
-      // Stone: heavy grain, deep cracks, and moss finally taking the base.
-      const v = vines(s * 0.7, '#3d5a3a', '#557a45', '#2c4231', null);
-      m.texture = grain(0.09 + s * 0.05, 0.55);
-      layers.push(cracks(s, '#0d0d0f', 9, 0.55));
-      if (s > 0.15) layers.push(`${v.image} bottom left / ${v.width}px ${v.height}px repeat-x`);
-      layers.push(vignette(0.16 + s * 0.18, 'rgba(10,10,12,ALPHA)'));
-      break;
-    }
-    default:
-      return m;
+  if (varnish > 0) textures.push(craquelure(0.015 + varnish * 0.03));
+  textures.push(grain(0.04 + crack * 0.06, 0.85));
+  if (base?.texture) textures.push(base.texture);
+  m.texture = textures.join(', ');
+
+  // Hairlines, even at two years: the ask was light cracks, and anything
+  // heavier stops reading as age and starts reading as damage.
+  if (crack > 0) layers.push(cracks(crack, '#160f0c', 9, 0.45));
+
+  if (plants > 0) {
+    // Greens read against the tavern's browns, and the growth is rooted at the
+    // bottom edge rather than spread over the content: a hedge line taking the
+    // room, not a pattern laid on top of it.
+    const v = vines(plants, '#3f6b34', '#5f9a44', '#2f5228', plants > 0.6 ? '#c9d97a' : null);
+    layers.push(`${v.image} bottom left / ${v.width}px ${v.height}px repeat-x`);
+  }
+
+  // Darkening at the edges carries both weathering and old varnish, so the two
+  // add rather than fighting over the same corner.
+  layers.push(vignette(0.06 + crack * 0.12 + varnish * 0.18, 'rgba(24,17,12,ALPHA)'));
+
+  if (dust > 0) {
+    m.fx = {
+      a: {
+        image: motes(0xd057, '#ffe8c0', Math.round(8 + dust * 16)),
+        tile: 128, duration: 70, motion: 'rise',
+      },
+    };
   }
 
   m.overlay = [base?.overlay, ...layers].filter(Boolean).join(', ');

@@ -171,6 +171,18 @@ body::after {
   .skin-fx > span { animation: none; }
 }
 
+/* A skin's patina inside its gallery tile: the plants along the sill, the
+   cracks across the frame. The seniority skins share one palette, so without
+   this the gallery would show six identical browns. */
+.skin-still::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--skin-overlay, none);
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
 /* A still frame of a skin's weather inside its gallery tile. Static rather
    than animated: forty-seven looping tiles in one scroll view would be both a
    fire hazard for the battery and completely illegible. Falls back to `none`,
