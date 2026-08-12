@@ -1,4 +1,4 @@
-import { Completion, CompletionStatus, Habit, PlayerProfile, Quit, Skin, SkinUnlock, Task } from '../types';
+import { Completion, CompletionStatus, DayNote, Habit, PlayerProfile, Quit, Skin, SkinUnlock, Task } from '../types';
 import { differenceInCalendarDays } from 'date-fns';
 import { totalCleanDays, bestStreakDays } from './quits';
 import { RESCUE_THRESHOLD_DAYS } from './tasks';
@@ -16,6 +16,7 @@ export interface UnlockContext {
   completions: Completion[];
   quits: Quit[];
   tasks: Task[];
+  dayNotes: { [dateKey: string]: DayNote };
   /** Days since the account's first recorded activity. */
   seniorityDays: number;
 }
@@ -125,6 +126,63 @@ export const FEATS: Feat[] = [
       t.completedAt &&
       differenceInCalendarDays(new Date(t.completedAt), new Date(t.createdAt)) >= RESCUE_THRESHOLD_DAYS
     ).length >= 10,
+  },
+  {
+    id: 'perfect-week',
+    name: 'Flawless Week',
+    description: 'Seven days running with nothing scheduled left undone.',
+    achieved: ({ completions }) => {
+      // Group by day: a day counts as perfect if something was scheduled and
+      // none of it was missed. Seven of those in a row is the feat.
+      const byDay = new Map<string, { done: number; missed: number }>();
+      for (const c of completions) {
+        const key = c.date.slice(0, 10);
+        const cell = byDay.get(key) ?? { done: 0, missed: 0 };
+        if (c.status === CompletionStatus.COMPLETED) cell.done++;
+        else if (c.status === CompletionStatus.FAILED) cell.missed++;
+        byDay.set(key, cell);
+      }
+      const days = [...byDay.keys()].sort();
+      let run = 0;
+      let prev: string | null = null;
+      for (const day of days) {
+        const cell = byDay.get(day)!;
+        const perfect = cell.done > 0 && cell.missed === 0;
+        const consecutive = prev !== null &&
+          differenceInCalendarDays(new Date(day), new Date(prev)) === 1;
+        run = perfect ? (consecutive ? run + 1 : 1) : 0;
+        if (run >= 7) return true;
+        prev = day;
+      }
+      return false;
+    },
+  },
+  {
+    id: 'iron-will',
+    name: 'Iron Will',
+    description: 'Ride out fifty urges.',
+    achieved: ({ quits }) => quits.reduce((s, q) => s + (q.urgesResisted ?? 0), 0) >= 50,
+  },
+  {
+    id: 'triage',
+    name: 'Triage',
+    description: 'Close five side quests in a single day.',
+    achieved: ({ tasks }) => {
+      const perDay = new Map<string, number>();
+      for (const t of tasks) {
+        if (!t.completedAt) continue;
+        const key = t.completedAt.slice(0, 10);
+        perDay.set(key, (perDay.get(key) ?? 0) + 1);
+      }
+      return [...perDay.values()].some(n => n >= 5);
+    },
+  },
+  {
+    id: 'chronicler',
+    name: 'Chronicler',
+    description: 'Write down how sixty days went.',
+    achieved: ({ dayNotes }) =>
+      Object.values(dayNotes).filter(n => n && (n.text?.trim() || n.mood)).length >= 60,
   },
 ];
 

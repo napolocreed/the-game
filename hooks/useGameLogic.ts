@@ -155,7 +155,7 @@ export const useGameLogic = () => {
 
   // --- Skins ---
   const unlockCtx: UnlockContext = {
-    profile, habits, completions, quits, tasks,
+    profile, habits, completions, quits, tasks, dayNotes,
     seniorityDays: seniorityDays(habits, quits, tasks, completions),
   };
   const unlockedSkinIds = SKINS.filter(s => isUnlocked(s.unlock, unlockCtx)).map(s => s.id);
