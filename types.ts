@@ -191,6 +191,52 @@ export interface Task {
   note?: string;
 }
 
+// --- Skins ---
+// The only thing in the app that turns a level-up into something you can see.
+// A skin repaints every surface by overriding colour tokens; rarer ones also
+// change the MATERIAL (border weight, shadow depth, surface texture), and a
+// few change with the age of the account itself.
+
+export type SkinRarity = 'common' | 'rare' | 'epic' | 'legend';
+
+export type SkinUnlock =
+  | { kind: 'default' }
+  | { kind: 'level'; level: number }
+  | { kind: 'badge'; badgeId: string; tier: number }
+  | { kind: 'feat'; featId: string }
+  /** Days since the account's first recorded activity. The one reward that
+   *  cannot be bought, rushed, or farmed — only outlived. */
+  | { kind: 'seniority'; days: number };
+
+/** Beyond colour: the physical character of the interface. */
+export interface SkinMaterial {
+  /** Border width in px for the main frame (default 4). */
+  borderWidth?: number;
+  /** Hard shadow offsets, e.g. '8px 8px 0px' and '4px 4px 0px'. */
+  shadowFar?: string;
+  shadowNear?: string;
+  /** A repeating CSS background painted over the canvas: scanlines, grain,
+   *  weave. Must be cheap and tile seamlessly. */
+  texture?: string;
+  /** Overlay drawn above everything (vignette, CRT curve). Pointer-events none. */
+  overlay?: string;
+}
+
+export interface Skin {
+  id: string;
+  name: string;
+  blurb: string;
+  rarity: SkinRarity;
+  unlock: SkinUnlock;
+  /** Overrides applied on top of the Classic token set. A partial rather than
+   *  a full set so a token added later inherits a sane value everywhere
+   *  instead of rendering transparent in forty skins at once. */
+  tokens: Record<string, string>;
+  material?: SkinMaterial;
+  /** This skin changes as the account ages: moss creeps in, the frame cracks. */
+  livingId?: string;
+}
+
 export interface DayNote {
   mood?: number; // 1 (worst) to 5 (best)
   text?: string;
