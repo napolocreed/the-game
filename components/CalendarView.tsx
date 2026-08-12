@@ -19,16 +19,16 @@ const CalendarHeader: React.FC<{
   onNextMonth: () => void;
 }> = ({ currentMonth, onPreviousMonth, onNextMonth }) => (
   <div className="flex justify-between items-center mb-4">
-    <button onClick={onPreviousMonth} className="p-2 bg-[#6a5340] border-2 border-[#8a6a4f] hover:bg-[#8a6a4f]">&lt;</button>
-    <h2 className="text-xl text-white">{format(currentMonth, 'MMMM yyyy')}</h2>
-    <button onClick={onNextMonth} className="p-2 bg-[#6a5340] border-2 border-[#8a6a4f] hover:bg-[#8a6a4f]">&gt;</button>
+    <button onClick={onPreviousMonth} className="p-2 bg-raised border-2 border-frame hover:bg-frame">&lt;</button>
+    <h2 className="text-xl text-ink-hi">{format(currentMonth, 'MMMM yyyy')}</h2>
+    <button onClick={onNextMonth} className="p-2 bg-raised border-2 border-frame hover:bg-frame">&gt;</button>
   </div>
 );
 
 const CalendarDays: React.FC = () => {
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   return (
-    <div className="grid grid-cols-7 text-center text-xs text-[#b0a08f]">
+    <div className="grid grid-cols-7 text-center text-xs text-ink-dim">
       {days.map(day => <div key={day} className="py-2">{day}</div>)}
     </div>
   );
@@ -70,7 +70,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ habits, completions, dayNot
   };
   
   return (
-    <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515]">
+    <div className="bg-surface border-4 border-frame p-4 shadow-hard">
       <CalendarHeader
         currentMonth={currentMonth}
         onPreviousMonth={() => setCurrentMonth(prev => new Date(prev.setMonth(prev.getMonth() - 1)))}
@@ -84,21 +84,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({ habits, completions, dayNot
           const note = dayNotes[dayKey];
           const hadRelapse = relapseDayKeys.has(dayKey);
           const dotColors = {
-              [CompletionStatus.COMPLETED]: 'bg-green-500',
-              [CompletionStatus.FAILED]: 'bg-orange-500',
-              [CompletionStatus.SKIPPED]: 'bg-gray-500',
+              [CompletionStatus.COMPLETED]: 'bg-good-soft',
+              [CompletionStatus.FAILED]: 'bg-miss-hi',
+              [CompletionStatus.SKIPPED]: 'bg-raised',
           };
 
           return (
             <div
               key={day.toString()}
               onClick={() => onDayClick(day)}
-              className={`h-20 border-2 border-[#2c2121] p-1 flex flex-col overflow-hidden cursor-pointer hover:bg-[#6a5340]
-                ${!isSameMonth(day, currentMonth) ? 'bg-[#2c2121] opacity-70' : ''}
-                ${isToday(day) ? 'border-yellow-400' : ''}`}
+              className={`h-20 border-2 border-inset p-1 flex flex-col overflow-hidden cursor-pointer hover:bg-raised
+                ${!isSameMonth(day, currentMonth) ? 'bg-inset opacity-70' : ''}
+                ${isToday(day) ? 'border-accent' : ''}`}
             >
               <div className="flex justify-between items-start">
-                <span className={`text-xs ${isToday(day) ? 'text-yellow-400' : 'text-white'}`}>
+                <span className={`text-xs ${isToday(day) ? 'text-accent' : 'text-ink-hi'}`}>
                   {format(day, 'd')}
                 </span>
                 <span className="text-[10px] leading-none">

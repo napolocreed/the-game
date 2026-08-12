@@ -61,11 +61,11 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div className="w-full max-w-md bg-[#4a3f36] border-4 border-[#8a6a4f] shadow-[8px_8px_0px_#1a1515] p-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-scrim flex items-center justify-center p-4 z-50">
+      <div className="w-full max-w-md bg-surface border-4 border-frame shadow-hard p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl text-[#f5b342]">Challenge a New Boss</h2>
-          <button onClick={handleClose} className="text-3xl text-[#f0e9d6] hover:text-red-500 leading-none">&times;</button>
+          <h2 className="text-xl text-accent">Challenge a New Boss</h2>
+          <button onClick={handleClose} className="text-3xl text-ink hover:text-danger-hi leading-none">&times;</button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,7 +77,7 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Cigarettes, Alcohol, Doomscrolling..."
               required
-              className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] placeholder:text-[#6a5340]"
+              className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent placeholder:text-ink-faint"
             />
           </div>
 
@@ -88,9 +88,9 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
               value={sinceDate}
               max={todayKey}
               onChange={(e) => setSinceDate(e.target.value)}
-              className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342]"
+              className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent"
             />
-            <p className="text-xs text-amber-300 mt-1">Backdating counts.</p>
+            <p className="text-xs text-warn mt-1">Backdating counts.</p>
           </div>
 
           <div>
@@ -100,9 +100,9 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
               onChange={(e) => setMotivation(e.target.value)}
               rows={2}
               placeholder="Your own words. e.g. To breathe better, for my family, to be free..."
-              className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] text-sm placeholder:text-[#6a5340]"
+              className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent text-sm placeholder:text-ink-faint"
             />
-            <p className="text-xs text-amber-300 mt-1">Shown during urges.</p>
+            <p className="text-xs text-warn mt-1">Shown during urges.</p>
           </div>
 
           <div>
@@ -113,7 +113,7 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
               value={costPerDay}
               onChange={(e) => setCostPerDay(e.target.value)}
               placeholder="e.g. 11"
-              className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] placeholder:text-[#6a5340]"
+              className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent placeholder:text-ink-faint"
             />
           </div>
 
@@ -126,7 +126,7 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
                   value={goalName}
                   onChange={(e) => setGoalName(e.target.value)}
                   placeholder="Treat yourself to..."
-                  className="flex-1 min-w-0 p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] placeholder:text-[#6a5340]"
+                  className="flex-1 min-w-0 p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent placeholder:text-ink-faint"
                 />
                 <input
                   type="text"
@@ -134,7 +134,7 @@ const AddQuitModal: React.FC<AddQuitModalProps> = ({ isOpen, onClose, onAddQuit 
                   value={goalPrice}
                   onChange={(e) => setGoalPrice(e.target.value)}
                   placeholder="Price €"
-                  className="w-24 p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] placeholder:text-[#6a5340]"
+                  className="w-24 p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent placeholder:text-ink-faint"
                 />
               </div>
             </div>

@@ -22,9 +22,9 @@ const QuestItem: React.FC<QuestItemProps> = ({ quest }) => {
   }
 
   return (
-    <div className={`p-4 bg-[#4a3f36] border-4 border-[#8a6a4f] shadow-[8px_8px_0px_#1a1515] transition-opacity ${isCompleted ? 'opacity-60' : 'opacity-100'}`}>
+    <div className={`p-4 bg-surface border-4 border-frame shadow-hard transition-opacity ${isCompleted ? 'opacity-60' : 'opacity-100'}`}>
       <div className="flex items-start gap-4">
-        <div className={`mt-1 flex-shrink-0 ${isCompleted ? 'text-green-400' : 'text-yellow-400'}`}>
+        <div className={`mt-1 flex-shrink-0 ${isCompleted ? 'text-good-soft' : 'text-accent'}`}>
           <QuestIcon className="w-8 h-8" />
         </div>
         {/* min-w-0 on both the column and the title: a flex item defaults to
@@ -32,10 +32,10 @@ const QuestItem: React.FC<QuestItemProps> = ({ quest }) => {
             the XP badge clean off the card. */}
         <div className="flex-grow min-w-0">
           <div className="flex justify-between items-baseline gap-2">
-            <h3 className={`text-lg min-w-0 break-words ${isCompleted ? 'line-through text-gray-400' : 'text-white'}`}>{quest.title}</h3>
-            <span className="font-bold text-purple-300 whitespace-nowrap shrink-0">+{quest.xpReward} XP</span>
+            <h3 className={`text-lg min-w-0 break-words ${isCompleted ? 'line-through text-ink-faint' : 'text-ink-hi'}`}>{quest.title}</h3>
+            <span className="font-bold text-xp whitespace-nowrap shrink-0">+{quest.xpReward} XP</span>
           </div>
-          <p className="text-sm text-[#b0a08f] mt-1">{quest.description}</p>
+          <p className="text-sm text-ink-dim mt-1">{quest.description}</p>
           {!isCompleted && (
             <div className="mt-3">
               <ProgressBar

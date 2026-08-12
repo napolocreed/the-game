@@ -9,9 +9,9 @@ interface AnalyticsInsightsProps {
 }
 
 const InsightCard: React.FC<{ title: string; value: React.ReactNode }> = ({ title, value }) => (
-  <div className="bg-[#2c2121] border-2 border-[#8a6a4f] p-3 flex-1 min-w-[140px]">
-    <p className="text-xs text-[#b0a08f] uppercase tracking-wider">{title}</p>
-    <p className="text-sm sm:text-lg font-bold text-white mt-1 break-words">{value}</p>
+  <div className="bg-inset border-2 border-frame p-3 flex-1 min-w-[140px]">
+    <p className="text-xs text-ink-dim uppercase tracking-wider">{title}</p>
+    <p className="text-sm sm:text-lg font-bold text-ink-hi mt-1 break-words">{value}</p>
   </div>
 );
 
@@ -57,10 +57,10 @@ const AnalyticsInsights: React.FC<AnalyticsInsightsProps> = ({ completions, habi
   }
 
   return (
-    <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515]">
+    <div className="bg-surface border-4 border-frame p-4 shadow-hard">
       <div className="flex items-center gap-3 mb-4">
-        <InsightIcon className="w-8 h-8 text-yellow-400" />
-        <h3 className="text-xl text-white">Player Insights</h3>
+        <InsightIcon className="w-8 h-8 text-accent" />
+        <h3 className="text-xl text-ink-hi">Player Insights</h3>
       </div>
       <div className="flex flex-wrap gap-3">
         <InsightCard

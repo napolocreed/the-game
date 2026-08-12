@@ -21,14 +21,14 @@ const QuitBoard: React.FC<QuitBoardProps> = ({ quits, onAddQuit, onResistUrge, o
 
   return (
     <div className="mb-8">
-      <h2 className="text-2xl md:text-3xl text-[#f5b342] mb-4">Boss Fights</h2>
+      <h2 className="text-2xl md:text-3xl text-accent mb-4">Boss Fights</h2>
 
       {/* The premise only needs explaining while there is nothing to look at.
           Once a fight exists the cards are the screen. */}
       {activeQuits.length === 0 && pausedQuits.length === 0 && (
-        <div className="text-center border-4 border-dashed border-[#6a5340] p-8 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
-          <p className="text-xl text-[#f0e9d6]">No boss yet.</p>
-          <p className="mt-2 text-[#b0a08f]">Every clean day is a hit.</p>
+        <div className="text-center border-4 border-dashed border-frame-dim p-8 bg-surface shadow-hard">
+          <p className="text-xl text-ink">No boss yet.</p>
+          <p className="mt-2 text-ink-dim">Every clean day is a hit.</p>
         </div>
       )}
 
@@ -54,17 +54,17 @@ const QuitBoard: React.FC<QuitBoardProps> = ({ quits, onAddQuit, onResistUrge, o
 
       {pausedQuits.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-lg text-[#b0a08f] mb-2">Paused fights</h3>
+          <h3 className="text-lg text-ink-dim mb-2">Paused fights</h3>
           <div className="space-y-2">
             {pausedQuits.map(quit => (
-              <div key={quit.id} className="flex justify-between items-center bg-[#4a3f36] border-2 border-[#6a5340] p-3">
-                <p className="text-white">{quit.name}</p>
+              <div key={quit.id} className="flex justify-between items-center bg-surface border-2 border-frame-dim p-3">
+                <p className="text-ink-hi">{quit.name}</p>
                 <div className="flex gap-2">
-                  <button onClick={() => onArchive(quit.id)} title="Resume the fight" className="p-1 hover:bg-[#6a5340]">
-                    <RestoreIcon className="w-5 h-5 text-green-400" />
+                  <button onClick={() => onArchive(quit.id)} title="Resume the fight" className="p-1 hover:bg-raised">
+                    <RestoreIcon className="w-5 h-5 text-good-soft" />
                   </button>
-                  <button onClick={() => onDelete(quit)} title="Delete permanently" className="p-1 hover:bg-[#6a5340]">
-                    <TrashIcon className="w-5 h-5 text-red-500" />
+                  <button onClick={() => onDelete(quit)} title="Delete permanently" className="p-1 hover:bg-raised">
+                    <TrashIcon className="w-5 h-5 text-danger-hi" />
                   </button>
                 </div>
               </div>

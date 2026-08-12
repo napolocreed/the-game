@@ -60,10 +60,10 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
 
       {/* Sub-navigation: the old single page had become a long scroll; four
           focused screens keep each question one tap away. */}
-      <div className="flex border-2 border-[#8a6a4f] mb-6 overflow-hidden" role="tablist" aria-label="Progress sections">
+      <div className="flex border-2 border-frame mb-6 overflow-hidden" role="tablist" aria-label="Progress sections">
         {SUB_TABS.map((t, i) => (
           <React.Fragment key={t.id}>
-            {i > 0 && <div className="w-px bg-[#8a6a4f] shrink-0" />}
+            {i > 0 && <div className="w-px bg-frame shrink-0" />}
             <button
               role="tab"
               aria-selected={tab === t.id}
@@ -72,7 +72,7 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
               aria-label={t.label}
               onClick={() => setTab(t.id)}
               className={`flex-1 min-w-0 px-1 py-2 text-[9px] sm:text-xs truncate transition-colors
-                ${tab === t.id ? 'bg-[#8a6a4f] text-white' : 'bg-[#2c2121] text-[#b0a08f] hover:bg-[#4a3f36]'}`}
+                ${tab === t.id ? 'bg-frame text-ink-hi' : 'bg-inset text-ink-dim hover:bg-surface'}`}
             >
               <span className="pm:hidden block truncate">{t.short}</span>
               <span className="hidden pm:block truncate">{t.label}</span>
@@ -108,23 +108,23 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
       {tab === 'habits' && (
         <div>
           {activeHabitStats.length === 0 ? (
-            <p className="text-[#b0a08f] text-center p-8">No habits yet.</p>
+            <p className="text-ink-dim text-center p-8">No habits yet.</p>
           ) : (
             <>
               {/* Swatches are drawn, not typed: the pixel font has no block
                   characters, so a "▮" would silently fall back to a smooth one. */}
-              <p className="text-[10px] text-[#b0a08f] mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <p className="text-[10px] text-ink-dim mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="flex items-center gap-1">
-                  <span className="inline-block w-2 h-3 bg-[#3b9b73]" /> done
+                  <span className="inline-block w-2 h-3 bg-good-soft" /> done
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="inline-block w-2 h-[6px] bg-[#c84141]" /> failed
+                  <span className="inline-block w-2 h-[6px] bg-cat-health" /> failed
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="inline-block w-2 h-[9px] bg-[#8a7a68]" /> skipped
+                  <span className="inline-block w-2 h-[9px] bg-neutral" /> skipped
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="inline-block w-2 h-3 bg-[#1f1717]" /> missed
+                  <span className="inline-block w-2 h-3 bg-inset-deep" /> missed
                 </span>
               </p>
               <div className="space-y-4">
@@ -143,7 +143,7 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
         quits.length > 0 || Object.keys(dayNotes).length > 0 ? (
           <RecoverySection quits={quits} dayNotes={dayNotes} habits={habits} completions={completions} />
         ) : (
-          <p className="text-[#b0a08f] text-center p-8">
+          <p className="text-ink-dim text-center p-8">
             Start a Boss Fight or log a mood to unlock this.
           </p>
         )
@@ -151,7 +151,7 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
 
       {tab === 'awards' && (
         <div>
-          <p className="text-xs text-[#f5b342] mb-4">{unlockedTiers}/{totalTiers} tiers</p>
+          <p className="text-xs text-accent mb-4">{unlockedTiers}/{totalTiers} tiers</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {BADGE_CATALOG.map(badge => (
               <BadgeItem

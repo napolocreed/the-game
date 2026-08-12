@@ -23,10 +23,10 @@ const QuitChips: React.FC<QuitChipsProps> = ({ quits, onClick }) => {
             key={quit.id}
             onClick={onClick}
             title={`${quit.name}: ${label} clean — open Battles`}
-            className="flex items-center gap-2 px-3 py-1.5 bg-[#4a3f36] border-2 border-[#8a6a4f] text-xs hover:bg-[#6a5340] hover:border-[#f5b342] transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-surface border-2 border-frame text-xs hover:bg-raised hover:border-accent transition-colors"
           >
-            <span className="text-[#b0a08f]">⚔️ {quit.name}</span>
-            <span className="text-green-400 font-bold">{label} clean</span>
+            <span className="text-ink-dim">⚔️ {quit.name}</span>
+            <span className="text-good-soft font-bold">{label} clean</span>
           </button>
         );
       })}

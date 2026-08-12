@@ -35,31 +35,31 @@ const RelapseModal: React.FC<RelapseModalProps> = ({ isOpen, quit, onClose, onCo
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div className="w-full max-w-md bg-[#4a3f36] border-4 border-[#8a6a4f] shadow-[8px_8px_0px_#1a1515] p-6 max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl text-[#f5b342] mb-4">The boss got a hit in.</h2>
+    <div className="fixed inset-0 bg-scrim flex items-center justify-center p-4 z-50">
+      <div className="w-full max-w-md bg-surface border-4 border-frame shadow-hard p-6 max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl text-accent mb-4">The boss got a hit in.</h2>
 
-        <p className="text-sm text-[#f0e9d6] leading-relaxed mb-4">
+        <p className="text-sm text-ink leading-relaxed mb-4">
           A hit, not a defeat. You're still in the fight.
         </p>
 
-        <div className="bg-[#2c2121] border-2 border-[#6a5340] p-3 mb-4 space-y-2">
-          <p className="text-xs text-[#b0a08f]">You keep:</p>
+        <div className="bg-inset border-2 border-frame-dim p-3 mb-4 space-y-2">
+          <p className="text-xs text-ink-dim">You keep:</p>
           <div className="flex justify-between text-sm">
-            <span className="text-[#b0a08f]">Best streak</span>
-            <span className="text-green-400 font-bold">{best} day{best !== 1 ? 's' : ''}</span>
+            <span className="text-ink-dim">Best streak</span>
+            <span className="text-good-soft font-bold">{best} day{best !== 1 ? 's' : ''}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-[#b0a08f]">Total clean days</span>
-            <span className="text-green-400 font-bold">{total} day{total !== 1 ? 's' : ''}</span>
+            <span className="text-ink-dim">Total clean days</span>
+            <span className="text-good-soft font-bold">{total} day{total !== 1 ? 's' : ''}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-[#b0a08f]">Urges resisted</span>
-            <span className="text-green-400 font-bold">{quit.urgesResisted}</span>
+            <span className="text-ink-dim">Urges resisted</span>
+            <span className="text-good-soft font-bold">{quit.urgesResisted}</span>
           </div>
         </div>
 
-        <label className="block mb-2 text-sm uppercase text-[#b0a08f]">What triggered it? (optional)</label>
+        <label className="block mb-2 text-sm uppercase text-ink-dim">What triggered it? (optional)</label>
         <div className="flex flex-wrap gap-2 mb-3">
           {TRIGGER_OPTIONS.map(t => (
             <button
@@ -67,8 +67,8 @@ const RelapseModal: React.FC<RelapseModalProps> = ({ isOpen, quit, onClose, onCo
               type="button"
               onClick={() => setTrigger(trigger === t ? null : t)}
               className={`px-2 py-1 text-xs border-2 transition-colors ${trigger === t
-                ? 'bg-[#f5b342] text-black border-[#f5b342]'
-                : 'bg-[#2c2121] border-[#6a5340] text-[#b0a08f] hover:border-[#8a6a4f]'}`}
+                ? 'bg-accent text-black border-accent'
+                : 'bg-inset border-frame-dim text-ink-dim hover:border-frame'}`}
             >
               {t}
             </button>
@@ -79,11 +79,11 @@ const RelapseModal: React.FC<RelapseModalProps> = ({ isOpen, quit, onClose, onCo
           onChange={(e) => setNote(e.target.value)}
           rows={3}
           placeholder="Stress, a place, boredom..."
-          className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] text-sm placeholder:text-[#6a5340]"
+          className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent text-sm placeholder:text-ink-faint"
         />
 
         <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-end">
-          <button onClick={handleClose} className="px-4 py-2 text-sm text-[#b0a08f] hover:text-white">
+          <button onClick={handleClose} className="px-4 py-2 text-sm text-ink-dim hover:text-ink-hi">
             Cancel
           </button>
           <PixelatedButton onClick={handleConfirm} className="text-sm">

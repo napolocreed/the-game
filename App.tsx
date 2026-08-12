@@ -190,7 +190,7 @@ const App: React.FC = () => {
               viewingDate={viewingDate}
             />
              { !isToday && !isViewingDateEditable && (
-              <div className="text-center p-2 bg-yellow-900 border-y-2 border-yellow-700 text-yellow-200 text-sm mt-4">
+              <div className="text-center p-2 bg-notice border-y-2 border-notice-edge text-warn text-sm mt-4">
                 Past day — logging locked (48h limit).
               </div>
             )}
@@ -266,11 +266,11 @@ const App: React.FC = () => {
       return {
         title: "Archive Habit?",
         confirmText: "Archive",
-        confirmClass: "bg-orange-700 hover:bg-orange-600 border-orange-800 shadow-[4px_4px_0px_#7c2d12]",
+        confirmClass: "bg-miss-hi hover:bg-miss-hi border-miss-edge shadow-miss",
         content: (
           <>
             <p>Archive "{habit.name}"?</p>
-            <p className="text-sm text-yellow-300 mt-2">Hidden from your list. History kept.</p>
+            <p className="text-sm text-warn mt-2">Hidden from your list. History kept.</p>
           </>
         )
       };
@@ -279,11 +279,11 @@ const App: React.FC = () => {
       return {
         title: "Delete Habit Permanently?",
         confirmText: "Delete",
-        confirmClass: "bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]",
+        confirmClass: "bg-danger hover:bg-danger-hi border-danger-edge shadow-danger",
         content: (
           <>
             <p>Delete "{habit.name}" forever?</p>
-            <p className="text-sm text-red-400 mt-2">This action cannot be undone.</p>
+            <p className="text-sm text-danger-hi mt-2">This action cannot be undone.</p>
           </>
         )
       };
@@ -294,7 +294,7 @@ const App: React.FC = () => {
   const confirmModalContent = getConfirmModalContent();
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#2c2121] text-[#f0e9d6] p-4 sm:p-6 md:p-8">
+    <div className="min-h-screen overflow-x-hidden bg-inset text-ink p-4 sm:p-6 md:p-8">
       <div className="max-w-4xl mx-auto">
         <Header profile={profile} onSettingsClick={() => setIsSettingsModalOpen(true)} />
         <main>
@@ -359,9 +359,9 @@ const App: React.FC = () => {
                 onConfirm={confirmImport}
                 title="Restore from Backup?"
                 confirmText="Restore & Overwrite"
-                confirmClass="bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]"
+                confirmClass="bg-danger hover:bg-danger-hi border-danger-edge shadow-danger"
             >
-                <p className="text-sm text-red-400 mt-2">Overwrites all current data. Cannot be undone.</p>
+                <p className="text-sm text-danger-hi mt-2">Overwrites all current data. Cannot be undone.</p>
             </ConfirmModal>
        )}
        {recoveryData && (
@@ -371,10 +371,10 @@ const App: React.FC = () => {
                 onConfirm={confirmRecovery}
                 title="Recover Your Data?"
                 confirmText="Recover"
-                confirmClass="bg-green-800 hover:bg-green-700 border-green-900 shadow-[4px_4px_0px_#052e16]"
+                confirmClass="bg-good-edge hover:bg-good border-good-edge shadow-good"
             >
                 <p>Your saved data appears to be empty, but a device backup was found{recoveryData.savedAt ? ` (from ${new Date(recoveryData.savedAt).toLocaleDateString()})` : ''}.</p>
-                <p className="text-sm text-green-300 mt-2">
+                <p className="text-sm text-good-soft mt-2">
                     It contains {(recoveryData.habits?.length ?? 0)} habit(s) and {(recoveryData.completions?.length ?? 0)} log entries. Recover it now?
                 </p>
             </ConfirmModal>
@@ -440,10 +440,10 @@ const App: React.FC = () => {
                 onConfirm={confirmDeleteQuit}
                 title="Delete This Boss Fight?"
                 confirmText="Delete"
-                confirmClass="bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]"
+                confirmClass="bg-danger hover:bg-danger-hi border-danger-edge shadow-danger"
            >
                 <p>Permanently delete "{quitToDelete.name}" and all its history?</p>
-                <p className="text-sm text-red-400 mt-2">Cannot be undone. Pause it instead?</p>
+                <p className="text-sm text-danger-hi mt-2">Cannot be undone. Pause it instead?</p>
            </ConfirmModal>
        )}
        {showUpdateNotification && <UpdateNotification onUpdate={handleUpdate} />}

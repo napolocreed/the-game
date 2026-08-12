@@ -27,18 +27,18 @@ const QUEST_UNLOCK_TIERS = [3, 5, 7];
 const DailyQuests: React.FC<{ quests: Quest[]; habits: Habit[]; isToday: boolean }> = ({ quests, habits, isToday }) => {
   if (!isToday) {
     return (
-      <div className="text-center border-4 border-dashed border-[#6a5340] p-8 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
-        <p className="text-lg text-[#f0e9d6]">Quests are today only.</p>
-        <p className="mt-2 text-[#b0a08f]">Go back to today.</p>
+      <div className="text-center border-4 border-dashed border-frame-dim p-8 bg-surface shadow-hard">
+        <p className="text-lg text-ink">Quests are today only.</p>
+        <p className="mt-2 text-ink-dim">Go back to today.</p>
       </div>
     );
   }
 
   if (habits.length === 0) {
     return (
-      <div className="text-center border-4 border-dashed border-[#6a5340] p-8 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
-        <p className="text-lg text-[#f0e9d6]">Quest log empty.</p>
-        <p className="mt-2 text-[#b0a08f]">Add a habit to unlock quests.</p>
+      <div className="text-center border-4 border-dashed border-frame-dim p-8 bg-surface shadow-hard">
+        <p className="text-lg text-ink">Quest log empty.</p>
+        <p className="mt-2 text-ink-dim">Add a habit to unlock quests.</p>
       </div>
     );
   }
@@ -49,8 +49,8 @@ const DailyQuests: React.FC<{ quests: Quest[]; habits: Habit[]; isToday: boolean
       <div className="space-y-4">
         {quests.map(quest => <QuestItem key={quest.id} quest={quest} />)}
         {allDone && (
-          <div className="text-center border-4 border-dashed border-green-700 p-6 bg-green-900 bg-opacity-30 shadow-[8px_8px_0px_#1a1515]">
-            <p className="text-lg text-green-300">All quests complete for today!</p>
+          <div className="text-center border-4 border-dashed border-good p-6 bg-good-edge bg-opacity-30 shadow-hard">
+            <p className="text-lg text-good-soft">All quests complete for today!</p>
           </div>
         )}
       </div>
@@ -60,8 +60,8 @@ const DailyQuests: React.FC<{ quests: Quest[]; habits: Habit[]; isToday: boolean
   const nextTier = QUEST_UNLOCK_TIERS.find(tier => tier > habits.length);
   if (nextTier) {
     return (
-      <div className="text-center border-4 border-dashed border-[#6a5340] p-8 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
-        <p className="text-lg text-[#f0e9d6] mb-4">Unlock More Quests</p>
+      <div className="text-center border-4 border-dashed border-frame-dim p-8 bg-surface shadow-hard">
+        <p className="text-lg text-ink mb-4">Unlock More Quests</p>
         <div className="w-full max-w-sm mx-auto">
           <ProgressBar value={habits.length} max={nextTier} label={`${habits.length}/${nextTier} habits`} />
         </div>
@@ -70,8 +70,8 @@ const DailyQuests: React.FC<{ quests: Quest[]; habits: Habit[]; isToday: boolean
   }
 
   return (
-    <div className="text-center border-4 border-dashed border-[#6a5340] p-8 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
-      <p className="text-lg text-[#b0a08f]">No quests today. Check back tomorrow.</p>
+    <div className="text-center border-4 border-dashed border-frame-dim p-8 bg-surface shadow-hard">
+      <p className="text-lg text-ink-dim">No quests today. Check back tomorrow.</p>
     </div>
   );
 };
@@ -104,8 +104,8 @@ const QuestBoard: React.FC<QuestBoardProps> = ({
             onClick={() => setTab(t.key)}
             className={`flex-1 min-w-0 px-2 py-2 border-2 text-[10px] pm:text-xs transition-colors ${
               tab === t.key
-                ? 'bg-[#8a6a4f] border-[#f5b342] text-white'
-                : 'bg-[#4a3f36] border-[#6a5340] text-[#b0a08f] hover:bg-[#6a5340]'
+                ? 'bg-frame border-accent text-ink-hi'
+                : 'bg-surface border-frame-dim text-ink-dim hover:bg-raised'
             }`}
           >
             <span className="truncate block">

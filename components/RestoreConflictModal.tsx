@@ -21,38 +21,38 @@ const RestoreConflictModal: React.FC<RestoreConflictModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div className="w-full max-w-lg bg-[#4a3f36] border-4 border-[#8a6a4f] shadow-[8px_8px_0px_#1a1515] p-6">
+    <div className="fixed inset-0 bg-scrim flex items-center justify-center p-4 z-50">
+      <div className="w-full max-w-lg bg-surface border-4 border-frame shadow-hard p-6">
         <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl text-[#f5b342]">Restore Habit Conflict</h2>
-            <button onClick={onClose} className="text-3xl text-[#f0e9d6] hover:text-red-500 leading-none">&times;</button>
+            <h2 className="text-2xl text-accent">Restore Habit Conflict</h2>
+            <button onClick={onClose} className="text-3xl text-ink hover:text-danger-hi leading-none">&times;</button>
         </div>
 
-        <div className="text-white my-6 space-y-2">
-            <p>You are restoring an archived habit: <span className="font-bold text-yellow-300">"{originalHabitName}"</span>.</p>
-            <p>However, an active copy named <span className="font-bold text-yellow-300">"{duplicateHabitName}"</span> already exists.</p>
+        <div className="text-ink-hi my-6 space-y-2">
+            <p>You are restoring an archived habit: <span className="font-bold text-warn">"{originalHabitName}"</span>.</p>
+            <p>However, an active copy named <span className="font-bold text-warn">"{duplicateHabitName}"</span> already exists.</p>
         </div>
 
         <div className="space-y-4">
-            <div className="bg-[#2c2121] border-2 border-[#8a6a4f] p-4">
-                <h3 className="text-lg text-white">Restore and Replace</h3>
-                <p className="text-sm text-[#b0a08f] my-2">The active copy and its progress are <span className="font-bold text-red-400">permanently deleted</span>.</p>
-                <PixelatedButton onClick={onReplace} className="bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]">
+            <div className="bg-inset border-2 border-frame p-4">
+                <h3 className="text-lg text-ink-hi">Restore and Replace</h3>
+                <p className="text-sm text-ink-dim my-2">The active copy and its progress are <span className="font-bold text-danger-hi">permanently deleted</span>.</p>
+                <PixelatedButton onClick={onReplace} className="bg-danger hover:bg-danger-hi border-danger-edge shadow-danger">
                     Replace Copy
                 </PixelatedButton>
             </div>
             
-            <div className="bg-[#2c2121] border-2 border-[#8a6a4f] p-4">
-                <h3 className="text-lg text-white">Restore and Keep Both</h3>
-                <p className="text-sm text-[#b0a08f] my-2">Both versions stay in your list.</p>
-                <PixelatedButton onClick={onKeepBoth} className="bg-blue-800 hover:bg-blue-700 border-blue-900 shadow-[4px_4px_0px_#1e3a8a]">
+            <div className="bg-inset border-2 border-frame p-4">
+                <h3 className="text-lg text-ink-hi">Restore and Keep Both</h3>
+                <p className="text-sm text-ink-dim my-2">Both versions stay in your list.</p>
+                <PixelatedButton onClick={onKeepBoth} className="bg-raised hover:bg-frame border-frame-dim shadow-hard-sm">
                     Keep Both Habits
                 </PixelatedButton>
             </div>
         </div>
 
         <div className="mt-8 flex justify-end">
-            <PixelatedButton onClick={onClose} className="bg-gray-600 border-gray-700 shadow-[4px_4px_0px_#222] hover:bg-gray-500">
+            <PixelatedButton onClick={onClose} className="bg-raised border-frame-dim shadow-hard-sm hover:bg-frame">
                 Cancel
             </PixelatedButton>
         </div>
