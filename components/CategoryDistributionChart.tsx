@@ -1,24 +1,20 @@
 import React from 'react';
-import { Completion, HabitCategory } from '../types';
+import { Completion, CompletionStatus, HabitCategory } from '../types';
+import { CATEGORY_HEX } from '../utils/categoryColors';
 
 interface CategoryDistributionChartProps {
   completions: Completion[];
 }
 
-const categoryColors: { [key in HabitCategory]: string } = {
-  [HabitCategory.HEALTH]: 'bg-red-600',
-  [HabitCategory.WELLNESS]: 'bg-blue-600',
-  [HabitCategory.PRODUCTIVITY]: 'bg-purple-600',
-  [HabitCategory.LIFESTYLE]: 'bg-green-600',
-};
-
 const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = ({ completions }) => {
-  const categoryCounts = completions.reduce((acc, completion) => {
+  // Only real wins count as "focus" — failed/skipped logs are not activity.
+  const done = completions.filter(c => c.status === CompletionStatus.COMPLETED);
+  const categoryCounts = done.reduce((acc, completion) => {
     acc[completion.habitCategory] = (acc[completion.habitCategory] || 0) + 1;
     return acc;
   }, {} as { [key in HabitCategory]?: number });
 
-  const totalCompletions = completions.length;
+  const totalCompletions = done.length;
 
   const sortedCategories = (Object.values(HabitCategory)).filter(cat => categoryCounts[cat] > 0)
     .sort((a, b) => (categoryCounts[b] ?? 0) - (categoryCounts[a] ?? 0));
@@ -32,14 +28,14 @@ const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = ({ c
           const percentage = totalCompletions > 0 ? (count / totalCompletions) * 100 : 0;
           return (
             <div key={category}>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-white">{category}</span>
-                <span className="text-[#b0a08f]">{count} completions</span>
+              <div className="flex justify-between items-baseline gap-2 text-sm mb-1">
+                <span className="text-white truncate">{category}</span>
+                <span className="text-[#b0a08f] text-xs whitespace-nowrap shrink-0">{count}×</span>
               </div>
               <div className="w-full h-4 bg-[#2c2121] border-2 border-[#8a6a4f]">
-                <div 
-                  className={`h-full ${categoryColors[category]}`}
-                  style={{ width: `${percentage}%` }}
+                <div
+                  className="h-full"
+                  style={{ width: `${percentage}%`, backgroundColor: CATEGORY_HEX[category] }}
                 />
               </div>
             </div>

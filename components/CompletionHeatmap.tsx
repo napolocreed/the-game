@@ -1,5 +1,5 @@
 import React from 'react';
-import { Completion } from '../types';
+import { Completion, CompletionStatus } from '../types';
 import { format, isSameDay } from 'date-fns';
 
 interface CompletionHeatmapProps {
@@ -17,6 +17,7 @@ const CompletionHeatmap: React.FC<CompletionHeatmapProps> = ({ completions }) =>
   }
   
   const completionsByDate = completions.reduce((acc, comp) => {
+    if (comp.status !== CompletionStatus.COMPLETED) return acc; // failed/skipped logs aren't wins
     const dateKey = format(new Date(comp.date), 'yyyy-MM-dd');
     acc[dateKey] = (acc[dateKey] || 0) + 1;
     return acc;
