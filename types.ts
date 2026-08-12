@@ -262,7 +262,26 @@ export interface Skin {
   tokens: Record<string, string>;
   material?: SkinMaterial;
   /** This skin changes as the account ages: moss creeps in, the frame cracks. */
-  livingId?: string;
+  patina?: PatinaSpec;
+}
+
+/**
+ * How far gone a seniority skin is.
+ *
+ * Each is an intensity from 0 to 1 at full maturity. They are declared rather
+ * than derived from the unlock threshold so the six tiers can tell different
+ * stories about the same room — one overrun by plants, one cracked but varnished
+ * and cared for — instead of being one dial turned six notches.
+ */
+export interface PatinaSpec {
+  /** Growth climbing the bottom edge. */
+  plants?: number;
+  /** Hairlines spreading across the whole interface. */
+  cracks?: number;
+  /** Craquelure and darkened corners: old varnish, looked after. */
+  varnish?: number;
+  /** Dust hanging in the light. */
+  dust?: number;
 }
 
 export interface DayNote {
