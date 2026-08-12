@@ -19,6 +19,8 @@ export interface GameSnapshot {
   tasks?: unknown[];
   activeSkinId?: string;
   seenSkins?: string[];
+  /** Skins ever earned. Only ever grows — see useGameLogic. */
+  earnedSkins?: string[];
   questsLastGenerated: string | null;
   savedAt: string; // ISO date string
 }

@@ -25,7 +25,7 @@ const lastNDays = (n: number, now: Date = new Date()): Date[] => {
 // Habits scheduled on a given day. Archived habits are excluded for past days
 // too — we don't know when they were archived, and counting them forever as
 // "missed" would poison the rate; skipping them entirely is the lesser error.
-const habitsScheduledOn = (day: Date, habits: Habit[]): Habit[] =>
+export const habitsScheduledOn = (day: Date, habits: Habit[]): Habit[] =>
   habits.filter(h =>
     !h.isArchived &&
     h.scheduleDays.includes(day.getDay()) &&

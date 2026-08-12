@@ -1,6 +1,7 @@
 import { Completion, CompletionStatus, DayNote, Habit, PlayerProfile, Quit, Skin, SkinUnlock, Task } from '../types';
-import { differenceInCalendarDays } from 'date-fns';
+import { differenceInCalendarDays, formatISO } from 'date-fns';
 import { totalCleanDays, bestStreakDays } from './quits';
+import { habitsScheduledOn } from './analytics';
 import { RESCUE_THRESHOLD_DAYS } from './tasks';
 
 /**
@@ -63,6 +64,42 @@ export interface Feat {
   achieved: (ctx: UnlockContext) => boolean;
 }
 
+/**
+ * How many days in a row, ending yesterday, had every scheduled habit done.
+ *
+ * "Missed" is derived from the schedule, not from a FAILED row. The app only
+ * writes one when you actively tap Missed, so counting rows would hand out
+ * these feats for a week of ignoring three habits a day and ticking the
+ * fourth — the opposite of what they are for.
+ *
+ * Today is excluded because it is not over yet, and a day with nothing
+ * scheduled neither breaks the run nor extends it: a rest day is not a
+ * failure, and it is not an achievement either.
+ */
+const cleanRun = (habits: Habit[], completions: Completion[], maxDays = 400): number => {
+  const doneByDay = new Map<string, Set<string>>();
+  for (const c of completions) {
+    if (c.status !== CompletionStatus.COMPLETED) continue;
+    const key = c.date.slice(0, 10);
+    if (!doneByDay.has(key)) doneByDay.set(key, new Set());
+    doneByDay.get(key)!.add(c.habitId);
+  }
+  if (doneByDay.size === 0) return 0;
+
+  let run = 0;
+  const day = new Date();
+  day.setHours(0, 0, 0, 0);
+  day.setDate(day.getDate() - 1);
+  for (let i = 0; i < maxDays; i++, day.setDate(day.getDate() - 1)) {
+    const scheduled = habitsScheduledOn(day, habits);
+    if (scheduled.length === 0) continue;
+    const done = doneByDay.get(formatISO(day, { representation: 'date' })) ?? new Set<string>();
+    if (!scheduled.every(h => done.has(h.id))) break;
+    run++;
+  }
+  return run;
+};
+
 export const FEATS: Feat[] = [
   {
     id: 'first-blood',
@@ -100,16 +137,7 @@ export const FEATS: Feat[] = [
     id: 'unbroken-month',
     name: 'Unbroken Month',
     description: 'Go 30 days without missing a scheduled habit.',
-    achieved: ({ completions }) => {
-      const done = completions.filter(c => c.status === CompletionStatus.COMPLETED);
-      if (done.length === 0) return false;
-      const lastMiss = completions
-        .filter(c => c.status === CompletionStatus.FAILED)
-        .reduce((latest, c) => Math.max(latest, new Date(c.date).getTime()), 0);
-      const firstEver = Math.min(...done.map(c => new Date(c.date).getTime()));
-      const since = lastMiss || firstEver;
-      return differenceInCalendarDays(new Date(), new Date(since)) >= 30;
-    },
+    achieved: ({ habits, completions }) => cleanRun(habits, completions) >= 30,
   },
   {
     id: 'clean-slate',
@@ -131,31 +159,7 @@ export const FEATS: Feat[] = [
     id: 'perfect-week',
     name: 'Flawless Week',
     description: 'Seven days running with nothing scheduled left undone.',
-    achieved: ({ completions }) => {
-      // Group by day: a day counts as perfect if something was scheduled and
-      // none of it was missed. Seven of those in a row is the feat.
-      const byDay = new Map<string, { done: number; missed: number }>();
-      for (const c of completions) {
-        const key = c.date.slice(0, 10);
-        const cell = byDay.get(key) ?? { done: 0, missed: 0 };
-        if (c.status === CompletionStatus.COMPLETED) cell.done++;
-        else if (c.status === CompletionStatus.FAILED) cell.missed++;
-        byDay.set(key, cell);
-      }
-      const days = [...byDay.keys()].sort();
-      let run = 0;
-      let prev: string | null = null;
-      for (const day of days) {
-        const cell = byDay.get(day)!;
-        const perfect = cell.done > 0 && cell.missed === 0;
-        const consecutive = prev !== null &&
-          differenceInCalendarDays(new Date(day), new Date(prev)) === 1;
-        run = perfect ? (consecutive ? run + 1 : 1) : 0;
-        if (run >= 7) return true;
-        prev = day;
-      }
-      return false;
-    },
+    achieved: ({ habits, completions }) => cleanRun(habits, completions) >= 7,
   },
   {
     id: 'iron-will',

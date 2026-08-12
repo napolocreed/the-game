@@ -55,10 +55,11 @@ export const useGameLogic = () => {
   const [dayNotes, setDayNotes] = useLocalStorage<{ [dateKey: string]: DayNote }>('dayNotes', {});
   const [tasks, setTasks] = useLocalStorage<Task[]>('tasks', []);
   const [activeSkinId, setActiveSkinId] = useLocalStorage<string>('activeSkin', DEFAULT_SKIN_ID);
-  // Which skins the player has SEEN unlock. Unlocking itself is derived from
-  // live data every render, so this only exists to know what is new — a skin
-  // can never be lost by a stat dipping back below its threshold.
+  // Which skins the player has SEEN unlock. Only used to know what is new;
+  // whether a skin is OWNED is the ratchet below.
   const [seenSkins, setSeenSkins] = useLocalStorage<string[]>('seenSkins', []);
+  // Every skin ever earned. A ratchet: see the unlock block below.
+  const [earnedSkins, setEarnedSkins] = useLocalStorage<string[]>('earnedSkins', []);
   const [questsLastGenerated, setQuestsLastGenerated] = useLocalStorage<string | null>('questsLastGenerated', null);
   const [autoBackupEnabled, setAutoBackupEnabled] = useLocalStorage<boolean>('autoBackupEnabled', true);
   const [lastAutoBackupDate, setLastAutoBackupDate] = useLocalStorage<string | null>('lastAutoBackupDate', null);
@@ -159,7 +160,21 @@ export const useGameLogic = () => {
     profile, habits, completions, quits, tasks, dayNotes,
     seniorityDays: seniorityDays(habits, quits, tasks, completions),
   };
-  const unlockedSkinIds = SKINS.filter(s => isUnlocked(s.unlock, unlockCtx)).map(s => s.id);
+  // Unlocking is recomputed from live data, which alone would mean a skin can
+  // be TAKEN BACK: a 100-day streak resets, a side-quest board gets a new task,
+  // an unbroken month ends. Earning is a fact about the past, so it is
+  // ratcheted into storage and never removed — the derived set can only ever
+  // add to it.
+  const derivedSkinIds = SKINS.filter(s => isUnlocked(s.unlock, unlockCtx)).map(s => s.id);
+  const unlockedSkinIds = Array.from(new Set([...earnedSkins, ...derivedSkinIds]));
+
+  const derivedKey = derivedSkinIds.join(',');
+  useEffect(() => {
+    setEarnedSkins(prev => {
+      const missing = derivedKey.split(',').filter(id => id && !prev.includes(id));
+      return missing.length ? [...prev, ...missing] : prev;
+    });
+  }, [derivedKey, setEarnedSkins]);
 
   // A skin the player selected but has not (or no longer) unlocked must never
   // be applied — otherwise a restored backup could paint the app with
@@ -244,10 +259,10 @@ export const useGameLogic = () => {
   useEffect(() => {
     if (!hasMeaningfulData) return;
     const timeout = window.setTimeout(() => {
-      saveMirror({ habits, completions, profile, quests, quits, dayNotes, tasks, activeSkinId, seenSkins, questsLastGenerated, savedAt: new Date().toISOString() });
+      saveMirror({ habits, completions, profile, quests, quits, dayNotes, tasks, activeSkinId, seenSkins, earnedSkins, questsLastGenerated, savedAt: new Date().toISOString() });
     }, 1000);
     return () => window.clearTimeout(timeout);
-  }, [habits, completions, profile, quests, quits, dayNotes, tasks, activeSkinId, seenSkins, questsLastGenerated, hasMeaningfulData]);
+  }, [habits, completions, profile, quests, quits, dayNotes, tasks, activeSkinId, seenSkins, earnedSkins, questsLastGenerated, hasMeaningfulData]);
 
   // Weekly snapshot history in IndexedDB (keeps the last 8).
   useEffect(() => {
@@ -255,7 +270,7 @@ export const useGameLogic = () => {
 
     const performAutoBackup = () => {
       console.log("Performing weekly auto-backup snapshot...");
-      addSnapshot({ habits, completions, profile, quests, quits, dayNotes, tasks, activeSkinId, seenSkins, questsLastGenerated, savedAt: new Date().toISOString() });
+      addSnapshot({ habits, completions, profile, quests, quits, dayNotes, tasks, activeSkinId, seenSkins, earnedSkins, questsLastGenerated, savedAt: new Date().toISOString() });
       setLastAutoBackupDate(new Date().toISOString());
     };
 
@@ -882,6 +897,7 @@ export const useGameLogic = () => {
         tasks,
         activeSkinId,
         seenSkins,
+        earnedSkins,
         questsLastGenerated,
       }
     };
@@ -936,6 +952,7 @@ export const useGameLogic = () => {
       setTasks(parsedData.tasks || []); // absent from v1/v2 backups -> empty
       setActiveSkinId(parsedData.activeSkinId || DEFAULT_SKIN_ID);
       setSeenSkins(parsedData.seenSkins || []);
+      setEarnedSkins(parsedData.earnedSkins || []);
       setQuestsLastGenerated(parsedData.questsLastGenerated || null);
       setImportFileContent(null);
       alert('Data restored successfully! The app will now reload.');
