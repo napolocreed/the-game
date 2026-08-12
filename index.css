@@ -2,6 +2,196 @@
 @tailwind components;
 @tailwind utilities;
 
+/* --- Skin tokens ---------------------------------------------------------
+   The default ("Classic") values. Every colour in the app resolves through
+   one of these, so a skin repaints the whole interface by overriding a few
+   custom properties on <html>. Kept in CSS as well as TypeScript so the very
+   first paint is already themed — a JS-only apply would flash the wrong
+   palette on every cold start. Source of truth: utils/theme.ts. */
+:root {
+  --canvas: #2c2121;
+  --surface: #4a3f36;
+  --raised: #6a5340;
+  --inset: #2c2121;
+  --inset-deep: #1f1717;
+
+  --frame: #8a6a4f;
+  --frame-dim: #6a5340;
+  --shadow: #1a1515;
+
+  --ink-hi: #ffffff;
+  --ink: #f0e9d6;
+  --ink-soft: #d8cbb8;
+  --ink-dim: #b0a08f;
+  --ink-faint: #8a7a68;
+
+  --accent: #f5b342;
+  --accent-dim: #c98d2e;
+  --title: #ff9a00;
+
+  --good: #15803d;
+  --good-hi: #16a34a;
+  --good-edge: #14532d;
+  --good-soft: #3b9b73;
+  --miss: #9a3412;
+  --miss-hi: #c2410c;
+  --miss-edge: #7c2d12;
+  --danger: #991b1b;
+  --danger-hi: #b91c1c;
+  --danger-edge: #7f1d1d;
+  --warn: #fcd34d;
+  --xp: #d8b4fe;
+  --info: #67e8f9;
+  --neutral: #8a7a68;
+  --notice: #4a3210;
+  --notice-edge: #a16207;
+
+  --mood-worst: #a33131;
+  --mood-bad: #c87b6a;
+  --mood-mid: #8a7a68;
+  --mood-good: #6aab8a;
+  --mood-best: #2f8f66;
+
+  --cat-health: #c84141;
+  --cat-wellness: #4185c8;
+  --cat-productivity: #d147af;
+  --cat-lifestyle: #3b9b73;
+  --cat-health-sh: #5e1c1c;
+  --cat-wellness-sh: #173d5e;
+  --cat-productivity-sh: #63174f;
+  --cat-lifestyle-sh: #164934;
+
+  --scrim: rgba(0, 0, 0, 0.75);
+
+  /* Material: depth, frame weight and surface are skin parameters, so a
+     flatter or grainier skin can change the whole app without touching a
+     single component. */
+  --shadow-far: 8px 8px 0px;
+  --shadow-near: 4px 4px 0px;
+  --border-w: 4px;
+  --texture: none;
+  --overlay: none;
+}
+
+/* --- Skin material -------------------------------------------------------
+   The texture layers over the page colour and under everything else; the
+   overlay (vignette, cracks, creeping plants) sits above the whole interface,
+   modals included, and never takes a click. Both default to `none`, so a skin
+   that declares no material costs nothing. */
+body,
+.skin-texture {
+  background-image: var(--texture);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: var(--overlay);
+}
+
+/* The pixel frame's weight is part of a skin's material — stone is heavier
+   than paper. Scoped to :root so it outranks the utility without needing a
+   layer, and a no-op at the default 4px. */
+:root .border-4 {
+  border-width: var(--border-w);
+}
+
+/* --- Skin weather --------------------------------------------------------
+   Rain, petals, embers, snow, drifting stars. Each layer is one seamlessly
+   tiled sprite that travels exactly its own tile size per cycle, so the loop
+   closes on itself and the seam never shows. Nothing here animates anything
+   but `transform`, which keeps the whole effect on the compositor instead of
+   repainting the page sixty times a second.
+
+   Above the interface and below the overlay, and it never takes a click. */
+.skin-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.skin-fx > span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* One tile of slack top and bottom, so the layer still covers the screen at
+     both ends of its travel. */
+  top: calc(-1 * var(--tile));
+  height: calc(100% + var(--tile) * 2);
+  background-image: var(--img);
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  animation: var(--anim) var(--dur) linear infinite;
+}
+
+/* No `will-change` on purpose: a transform animation is promoted to its own
+   compositor layer automatically while it runs, whereas the hint would hold
+   two full-screen layers in memory forever — including for the great majority
+   of skins that have no weather at all. */
+
+.skin-fx > .fx-a {
+  --img: var(--fx-a-img, none);
+  --tile: var(--fx-a-tile, 0px);
+  --dur: var(--fx-a-dur, 0s);
+  --anim: var(--fx-a-anim, none);
+}
+
+.skin-fx > .fx-b {
+  --img: var(--fx-b-img, none);
+  --tile: var(--fx-b-tile, 0px);
+  --dur: var(--fx-b-dur, 0s);
+  --anim: var(--fx-b-anim, none);
+}
+
+@keyframes fx-fall {
+  to { transform: translateY(var(--tile)); }
+}
+
+@keyframes fx-rise {
+  to { transform: translateY(calc(-1 * var(--tile))); }
+}
+
+/* A band of light crossing the whole surface and leaving again — the pause
+   between passes is most of the cycle, which is what makes it read as a
+   glint rather than a strobe. */
+@keyframes fx-sweep {
+  from { transform: translateX(-130%); }
+  to { transform: translateX(130%); }
+}
+
+/* Motion is decoration here; the skin is still itself without it. Frozen
+   sprites stay on screen, which reads as a still night sky rather than a
+   missing feature. */
+@media (prefers-reduced-motion: reduce) {
+  .skin-fx > span { animation: none; }
+}
+
+/* A still frame of a skin's weather inside its gallery tile. Static rather
+   than animated: forty-seven looping tiles in one scroll view would be both a
+   fire hazard for the battery and completely illegible. Falls back to `none`,
+   so tiles for skins without weather are untouched. */
+.skin-still::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--fx-still, none);
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* How a skin glows. Confined to accent and title text so the body copy that
+   actually has to be read is never blurred by it. */
+:root .text-accent,
+:root .text-title {
+  text-shadow: var(--glow, none);
+}
+
 /* Press Start 2P (OFL) self-hosted: no Google Fonts dependency, works offline
    and under strict CSPs. Fallback is monospace — closest to the pixel look
    (the old `cursive` fallback rendered handwriting when the CDN was blocked). */
@@ -24,8 +214,8 @@
 
 body {
   font-family: 'Press Start 2P', 'Courier New', monospace;
-  background-color: #2c2121;
-  color: #f0e9d6;
+  background-color: var(--canvas);
+  color: var(--ink);
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
@@ -34,12 +224,12 @@ body {
 /* Custom scrollbar for a retro feel */
 ::-webkit-scrollbar {
   width: 12px;
-  background-color: #2c2121;
+  background-color: var(--canvas);
 }
 ::-webkit-scrollbar-thumb {
-  background-color: #8a6a4f;
-  border: 2px solid #2c2121;
+  background-color: var(--frame);
+  border: 2px solid var(--canvas);
 }
 ::-webkit-scrollbar-track {
-  background-color: #4a3f36;
+  background-color: var(--surface);
 }

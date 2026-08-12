@@ -55,61 +55,61 @@ const UrgeModal: React.FC<UrgeModalProps> = ({ isOpen, quit, onClose, onResisted
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-50">
-      <div className="w-full max-w-md bg-[#4a3f36] border-4 border-[#8a6a4f] shadow-[8px_8px_0px_#1a1515] p-6 text-center max-h-[95vh] overflow-y-auto">
+      <div className="w-full max-w-md bg-surface border-4 border-frame shadow-hard p-6 text-center max-h-[95vh] overflow-y-auto">
         {xpGained === null ? (
           <>
-            <h2 className="text-xl text-[#f5b342] mb-2">🌊 Ride the Wave</h2>
-            <p className="text-xs text-[#b0a08f] leading-relaxed mb-4">
+            <h2 className="text-xl text-accent mb-2">🌊 Ride the Wave</h2>
+            <p className="text-xs text-ink-dim leading-relaxed mb-4">
               Urges rise, peak, and pass. Breathe with the box.
             </p>
 
             {quit.motivation && (
-              <div className="bg-[#2c2121] border-l-4 border-[#f5b342] p-3 mb-4 text-left">
-                <p className="text-[10px] text-[#b0a08f] uppercase mb-1">Why you started:</p>
-                <p className="text-sm text-[#f5b342] italic">"{quit.motivation}"</p>
+              <div className="bg-inset border-l-4 border-accent p-3 mb-4 text-left">
+                <p className="text-[10px] text-ink-dim uppercase mb-1">Why you started:</p>
+                <p className="text-sm text-accent italic">"{quit.motivation}"</p>
               </div>
             )}
 
             <div className="flex items-center justify-center h-36 mb-4">
               <div
-                className="w-20 h-20 bg-green-800 border-4 border-green-500 transition-transform duration-1000 ease-in-out flex items-center justify-center"
+                className="w-20 h-20 bg-good-edge border-4 border-good-soft transition-transform duration-1000 ease-in-out flex items-center justify-center"
                 style={{ transform: `scale(${breathScale})` }}
               >
                 <span className="text-2xl">🧘</span>
               </div>
             </div>
-            <p className="text-sm text-green-300 mb-4 h-5">{breathText}</p>
+            <p className="text-sm text-good-soft mb-4 h-5">{breathText}</p>
 
-            <p className="text-3xl text-white mb-6">
+            <p className="text-3xl text-ink-hi mb-6">
               {secondsLeft > 0
                 ? `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}`
                 : 'You rode it out. 🏄'}
             </p>
 
             <div className="flex flex-col gap-3">
-              <PixelatedButton onClick={handleResisted} className="bg-green-800 border-green-900 hover:bg-green-700">
+              <PixelatedButton onClick={handleResisted} className="bg-good-edge border-good-edge hover:bg-good">
                 💪 The urge passed — I resisted
               </PixelatedButton>
-              <button onClick={onClose} className="text-xs text-[#b0a08f] hover:text-white p-2">
+              <button onClick={onClose} className="text-xs text-ink-dim hover:text-ink-hi p-2">
                 Close (it still counts that you paused)
               </button>
             </div>
           </>
         ) : (
           <>
-            <h2 className="text-2xl text-green-400 mb-4">Victory! 💪</h2>
-            <p className="text-sm text-[#f0e9d6] mb-2">
-              You just beat an urge against <span className="text-[#f5b342]">{quit.name}</span>.
+            <h2 className="text-2xl text-good-soft mb-4">Victory! 💪</h2>
+            <p className="text-sm text-ink mb-2">
+              You just beat an urge against <span className="text-accent">{quit.name}</span>.
             </p>
-            <p className="text-xs text-[#b0a08f] mb-4">
+            <p className="text-xs text-ink-dim mb-4">
               {xpGained > 0
                 ? 'Every urge you resist makes the next one weaker.'
                 : "XP capped today — it still counts."}
             </p>
-            {xpGained > 0 && <p className="text-3xl text-[#f5b342] mb-4">+{xpGained} XP</p>}
+            {xpGained > 0 && <p className="text-3xl text-accent mb-4">+{xpGained} XP</p>}
 
             <div className="mb-5">
-              <p className="text-xs text-[#b0a08f] uppercase mb-2">What triggered it? (optional)</p>
+              <p className="text-xs text-ink-dim uppercase mb-2">What triggered it? (optional)</p>
               <div className="flex flex-wrap justify-center gap-2">
                 {TRIGGER_OPTIONS.map(trigger => (
                   <button
@@ -117,8 +117,8 @@ const UrgeModal: React.FC<UrgeModalProps> = ({ isOpen, quit, onClose, onResisted
                     type="button"
                     onClick={() => handleTag(trigger)}
                     className={`px-2 py-1 text-xs border-2 transition-colors ${taggedTrigger === trigger
-                      ? 'bg-[#f5b342] text-black border-[#f5b342]'
-                      : 'bg-[#2c2121] border-[#6a5340] text-[#b0a08f] hover:border-[#8a6a4f]'}`}
+                      ? 'bg-accent text-black border-accent'
+                      : 'bg-inset border-frame-dim text-ink-dim hover:border-frame'}`}
                   >
                     {trigger}
                   </button>

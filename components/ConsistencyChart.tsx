@@ -32,12 +32,12 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ habits, completions
   if (firstIdx >= 0) labeled.add(firstIdx);
 
   return (
-    <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515]">
+    <div className="bg-surface border-4 border-frame p-4 shadow-hard">
       <div className="flex items-center gap-2 mb-1">
-        <TrendUpIcon className="w-5 h-5 text-[#f5b342] shrink-0" />
-        <h3 className="text-xl text-white">Consistency</h3>
+        <TrendUpIcon className="w-5 h-5 text-accent shrink-0" />
+        <h3 className="text-xl text-ink-hi">Consistency</h3>
       </div>
-      <p className="text-[10px] text-[#b0a08f] mb-4">% completed · {WEEKS} weeks</p>
+      <p className="text-[10px] text-ink-dim mb-4">% completed · {WEEKS} weeks</p>
       <div className="h-36 flex items-end gap-[3px]">
         {weeks.map((w, i) => {
           const pct = w.rate !== null ? Math.round(w.rate * 100) : null;
@@ -49,21 +49,21 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ habits, completions
               title={`Week of ${format(w.weekStart, 'MMM d')}: ${pct !== null ? `${w.completed}/${w.scheduled} (${pct}%)` : 'no scheduled habits'}`}
             >
               {pct !== null && labeled.has(i) && (
-                <span className="text-[8px] text-[#f5b342] mb-[2px]">{pct}</span>
+                <span className="text-[8px] text-accent mb-[2px]">{pct}</span>
               )}
               {pct !== null ? (
                 <div
-                  className={`w-full ${isCurrent ? 'bg-[#f5b342]' : 'bg-[#c98d2e]'}`}
+                  className={`w-full ${isCurrent ? 'bg-accent' : 'bg-accent-dim'}`}
                   style={{ height: `${Math.max(pct, 3)}%` }}
                 />
               ) : (
-                <div className="w-full h-[2px] bg-[#6a5340]" />
+                <div className="w-full h-[2px] bg-raised" />
               )}
             </div>
           );
         })}
       </div>
-      <div className="flex justify-between text-[10px] text-[#b0a08f] mt-1">
+      <div className="flex justify-between text-[10px] text-ink-dim mt-1">
         <span>{format(weeks[0].weekStart, 'MMM d')}</span>
         <span>This week</span>
       </div>

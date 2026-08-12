@@ -55,7 +55,7 @@ const TaskRow: React.FC<{
     : null;
 
   return (
-    <div className={`bg-[#4a3f36] border-4 border-[#8a6a4f] p-3 shadow-[8px_8px_0px_#1a1515] ${open ? '' : 'opacity-70'}`}>
+    <div className={`bg-surface border-4 border-frame p-3 shadow-hard ${open ? '' : 'opacity-70'}`}>
       <div className="flex items-start gap-2">
         <span
           className="shrink-0 w-6 h-6 flex items-center justify-center"
@@ -65,20 +65,20 @@ const TaskRow: React.FC<{
           }}
           title={task.category}
         >
-          <CategoryIcon className="w-3.5 h-3.5 text-white" />
+          <CategoryIcon className="w-3.5 h-3.5 text-ink-hi" />
         </span>
         <button
           onClick={() => open && onEdit(task)}
           disabled={!open}
           className={`flex-1 min-w-0 text-left text-sm pm:text-base leading-snug break-words ${
-            open ? 'text-[#f0e9d6] hover:text-white' : 'text-[#b0a08f] line-through'
+            open ? 'text-ink hover:text-ink-hi' : 'text-ink-dim line-through'
           }`}
         >
           {task.name}
         </button>
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[#b0a08f]">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-ink-dim">
         {open ? (
           <>
             <span className="flex items-center gap-1">
@@ -91,14 +91,14 @@ const TaskRow: React.FC<{
             </span>
             {pushes > 0 && <span>pushed {pushes}×</span>}
             {dueIn !== null && (
-              <span className={dueIn <= 3 ? 'text-orange-300' : ''}>
+              <span className={dueIn <= 3 ? 'text-warn' : ''}>
                 {dueIn < 0 ? `due ${Math.abs(dueIn)}d ago` : dueIn === 0 ? 'due today' : `due ${format(new Date(task.dueDate!), 'MMM d')}`}
               </span>
             )}
-            <span className="text-purple-300">+{taskXp(task)} XP</span>
+            <span className="text-xp">+{taskXp(task)} XP</span>
           </>
         ) : task.completedAt ? (
-          <span className="text-[#3b9b73]">
+          <span className="text-good-soft">
             done{waited !== null && waited >= 30 ? ` after ${waited}d` : ''}
           </span>
         ) : (
@@ -111,7 +111,7 @@ const TaskRow: React.FC<{
           <>
             <button
               onClick={() => onComplete(task.id)}
-              className="flex-[3] flex items-center justify-center gap-2 h-10 border-2 border-green-900 bg-green-700 hover:bg-green-600 text-white text-xs transition-colors"
+              className="flex-[3] flex items-center justify-center gap-2 h-10 border-2 border-good-edge bg-good hover:bg-good-hi text-ink-hi text-xs transition-colors"
             >
               <CheckIcon className="w-4 h-4" />
               Done
@@ -119,7 +119,7 @@ const TaskRow: React.FC<{
             <button
               onClick={() => onDrop(task.id)}
               title="Let this one go — not a failure, a decision"
-              className="flex-1 h-10 border-2 border-[#4a3f36] bg-[#6a5340] hover:bg-[#8a6a4f] text-[#f0e9d6] text-xs transition-colors"
+              className="flex-1 h-10 border-2 border-surface bg-raised hover:bg-frame text-ink text-xs transition-colors"
             >
               Let go
             </button>
@@ -129,7 +129,7 @@ const TaskRow: React.FC<{
             <button
               onClick={() => onReopen(task.id)}
               title="Put it back on the board"
-              className="flex-1 flex items-center justify-center gap-2 h-10 border-2 border-[#4a3f36] bg-[#6a5340] hover:bg-[#8a6a4f] text-[#f0e9d6] text-xs transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 h-10 border-2 border-surface bg-raised hover:bg-frame text-ink text-xs transition-colors"
             >
               <UndoIcon className="w-4 h-4" />
               Reopen
@@ -138,9 +138,9 @@ const TaskRow: React.FC<{
               onClick={() => onDelete(task.id)}
               title="Delete permanently"
               aria-label="Delete permanently"
-              className="w-10 h-10 flex items-center justify-center border-2 border-[#4a3f36] bg-[#6a5340] hover:bg-red-900 transition-colors"
+              className="w-10 h-10 flex items-center justify-center border-2 border-surface bg-raised hover:bg-danger transition-colors"
             >
-              <TrashIcon className="w-4 h-4 text-red-400" />
+              <TrashIcon className="w-4 h-4 text-danger-hi" />
             </button>
           </>
         )}
@@ -177,10 +177,10 @@ const SideQuestBoard: React.FC<SideQuestBoardProps> = ({ tasks, onAdd, onEdit, o
   return (
     <div>
       {top && (
-        <div className="bg-[#2c2121] border-2 border-[#8a6a4f] p-3 mb-4">
-          <p className="text-[10px] text-[#b0a08f] uppercase tracking-wider">Longest waiting</p>
-          <p className="text-sm text-[#f0e9d6] mt-1 break-words">{top.task.name}</p>
-          <p className="text-xs text-[#f5b342] mt-1">{top.days}d</p>
+        <div className="bg-inset border-2 border-frame p-3 mb-4">
+          <p className="text-[10px] text-ink-dim uppercase tracking-wider">Longest waiting</p>
+          <p className="text-sm text-ink mt-1 break-words">{top.task.name}</p>
+          <p className="text-xs text-accent mt-1">{top.days}d</p>
         </div>
       )}
 
@@ -193,8 +193,8 @@ const SideQuestBoard: React.FC<SideQuestBoardProps> = ({ tasks, onAdd, onEdit, o
             onClick={() => setFilter(f.key)}
             className={`flex-1 min-w-0 px-1 py-2 border-2 text-[10px] pm:text-xs transition-colors ${
               filter === f.key
-                ? 'bg-[#8a6a4f] border-[#f5b342] text-white'
-                : 'bg-[#4a3f36] border-[#6a5340] text-[#b0a08f] hover:bg-[#6a5340]'
+                ? 'bg-frame border-accent text-ink-hi'
+                : 'bg-surface border-frame-dim text-ink-dim hover:bg-raised'
             }`}
           >
             <span className="truncate block">{f.label} {f.count}</span>
@@ -203,8 +203,8 @@ const SideQuestBoard: React.FC<SideQuestBoardProps> = ({ tasks, onAdd, onEdit, o
       </div>
 
       {shown.length === 0 ? (
-        <div className="text-center border-4 border-dashed border-[#6a5340] p-8 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
-          <p className="text-lg text-[#f0e9d6]">
+        <div className="text-center border-4 border-dashed border-frame-dim p-8 bg-surface shadow-hard">
+          <p className="text-lg text-ink">
             {filter === 'done' ? 'Nothing closed yet.' : filter === 'quick' ? 'No quick ones.' : 'Board is clear.'}
           </p>
         </div>

@@ -146,17 +146,17 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({ isOpen, onClose, onAddHab
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div className="w-full max-w-2xl bg-[#4a3f36] border-4 border-[#8a6a4f] shadow-[8px_8px_0px_#1a1515] p-6 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-scrim flex items-center justify-center p-4 z-50">
+      <div className="w-full max-w-2xl bg-surface border-4 border-frame shadow-hard p-6 max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl text-[#f5b342]">{habitToDuplicate ? 'Duplicate Habit' : 'Add a New Habit'}</h2>
-          <button onClick={handleClose} className="text-2xl text-[#f0e9d6] hover:text-red-500">&times;</button>
+          <h2 className="text-2xl text-accent">{habitToDuplicate ? 'Duplicate Habit' : 'Add a New Habit'}</h2>
+          <button onClick={handleClose} className="text-2xl text-ink hover:text-danger-hi">&times;</button>
         </div>
         
-        <div className="flex mb-4 border-b-4 border-[#8a6a4f]">
-            <button onClick={() => setActiveTab('presets')} className={`flex-1 p-2 ${activeTab === 'presets' ? 'bg-[#8a6a4f] text-white' : 'bg-transparent'}`}>Presets</button>
-            <button onClick={() => setActiveTab('custom')} className={`flex-1 p-2 ${activeTab === 'custom' ? 'bg-[#8a6a4f] text-white' : 'bg-transparent'}`}>Custom</button>
-            <button onClick={() => setActiveTab('templates')} className={`flex-1 p-2 ${activeTab === 'templates' ? 'bg-[#8a6a4f] text-white' : 'bg-transparent'}`}>Ideas</button>
+        <div className="flex mb-4 border-b-4 border-frame">
+            <button onClick={() => setActiveTab('presets')} className={`flex-1 p-2 ${activeTab === 'presets' ? 'bg-frame text-ink-hi' : 'bg-transparent'}`}>Presets</button>
+            <button onClick={() => setActiveTab('custom')} className={`flex-1 p-2 ${activeTab === 'custom' ? 'bg-frame text-ink-hi' : 'bg-transparent'}`}>Custom</button>
+            <button onClick={() => setActiveTab('templates')} className={`flex-1 p-2 ${activeTab === 'templates' ? 'bg-frame text-ink-hi' : 'bg-transparent'}`}>Ideas</button>
         </div>
         
         <div className="overflow-y-auto pr-2">
@@ -165,19 +165,19 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({ isOpen, onClose, onAddHab
                 <div className="space-y-4">
                   <div>
                     <label className="block mb-2 text-sm uppercase">Habit Name</label>
-                    <input type="text" value={customName} onChange={(e) => setCustomName(e.target.value)} required className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342]" />
+                    <input type="text" value={customName} onChange={(e) => setCustomName(e.target.value)} required className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent" />
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block mb-2 text-sm uppercase">Category</label>
-                        <select value={customCategory} onChange={(e) => setCustomCategory(e.target.value as HabitCategory)} className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342]">
+                        <select value={customCategory} onChange={(e) => setCustomCategory(e.target.value as HabitCategory)} className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent">
                           {Object.values(HabitCategory).map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                       </div>
                       <div>
                         <label className="block mb-2 text-sm uppercase">Type</label>
-                        <select value={customType} onChange={(e) => setCustomType(e.target.value as HabitType)} className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342]">
+                        <select value={customType} onChange={(e) => setCustomType(e.target.value as HabitType)} className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent">
                           {Object.values(HabitType).map(type => <option key={type} value={type}>{type}</option>)}
                         </select>
                       </div>
@@ -185,14 +185,14 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({ isOpen, onClose, onAddHab
 
                   <div>
                     <label className="block mb-2 text-sm uppercase">Difficulty & Reward</label>
-                    <div className="bg-[#2c2121] border-2 border-[#8a6a4f] p-3 space-y-3">
+                    <div className="bg-inset border-2 border-frame p-3 space-y-3">
                         <div className="flex gap-2">
                            {(Object.keys(DIFFICULTY_PRESETS) as DifficultyMode[]).map(key => (
-                                <button key={key} type="button" onClick={() => setDifficultyMode(key)} className={`flex-1 px-2 py-1 text-xs border-2 transition-colors ${difficultyMode === key ? 'bg-[#f5b342] text-black border-[#f5b342]' : 'border-[#8a6a4f] hover:bg-[#6a5340]'}`}>
+                                <button key={key} type="button" onClick={() => setDifficultyMode(key)} className={`flex-1 px-2 py-1 text-xs border-2 transition-colors ${difficultyMode === key ? 'bg-accent text-black border-accent' : 'border-frame hover:bg-raised'}`}>
                                     {DIFFICULTY_PRESETS[key].name} ({DIFFICULTY_PRESETS[key].xp} XP)
                                 </button>
                            ))}
-                           <button type="button" onClick={() => setDifficultyMode('custom')} className={`flex-1 px-2 py-1 text-xs border-2 transition-colors ${difficultyMode === 'custom' ? 'bg-[#f5b342] text-black border-[#f5b342]' : 'border-[#8a6a4f] hover:bg-[#6a5340]'}`}>
+                           <button type="button" onClick={() => setDifficultyMode('custom')} className={`flex-1 px-2 py-1 text-xs border-2 transition-colors ${difficultyMode === 'custom' ? 'bg-accent text-black border-accent' : 'border-frame hover:bg-raised'}`}>
                                 Custom
                            </button>
                         </div>
@@ -200,11 +200,11 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({ isOpen, onClose, onAddHab
                             <div className="grid grid-cols-2 gap-3 pt-2">
                                 <div>
                                     <label className="block mb-1 text-xs uppercase">Custom Name</label>
-                                    <input type="text" value={customDifficultyName} onChange={e => setCustomDifficultyName(e.target.value)} className="w-full p-2 text-sm bg-[#4a3f36] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342]" />
+                                    <input type="text" value={customDifficultyName} onChange={e => setCustomDifficultyName(e.target.value)} className="w-full p-2 text-sm bg-surface border-2 border-frame focus:outline-none focus:border-accent" />
                                 </div>
                                 <div>
                                     <label className="block mb-1 text-xs uppercase">Base XP</label>
-                                    <input type="number" value={customXpReward} onChange={e => setCustomXpReward(Math.max(1, parseInt(e.target.value) || 1))} min="1" max="100" className="w-full p-2 text-sm bg-[#4a3f36] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342]" />
+                                    <input type="number" value={customXpReward} onChange={e => setCustomXpReward(Math.max(1, parseInt(e.target.value) || 1))} min="1" max="100" className="w-full p-2 text-sm bg-surface border-2 border-frame focus:outline-none focus:border-accent" />
                                 </div>
                             </div>
                         )}
@@ -213,19 +213,19 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({ isOpen, onClose, onAddHab
                   
                   <div>
                     <label className="block mb-2 text-sm uppercase">Scheduling</label>
-                    <div className="bg-[#2c2121] border-2 border-[#8a6a4f] p-3">
+                    <div className="bg-inset border-2 border-frame p-3">
                         <div className="flex justify-around mb-3">
                             {DAYS.map((day, index) => (
                                <button key={index} type="button" onClick={() => handleDayToggle(index)}
-                                className={`w-8 h-8 border-2 flex items-center justify-center transition-colors ${scheduleDays.includes(index) ? 'bg-[#f5b342] text-black border-[#f5b342]' : 'bg-transparent text-white border-[#8a6a4f] hover:bg-[#6a5340]'}`}>
+                                className={`w-8 h-8 border-2 flex items-center justify-center transition-colors ${scheduleDays.includes(index) ? 'bg-accent text-black border-accent' : 'bg-transparent text-ink-hi border-frame hover:bg-raised'}`}>
                                    {day}
                                </button>
                             ))}
                         </div>
                         <div className="flex justify-center gap-2 flex-wrap">
-                            <button type="button" onClick={() => setScheduleDays([0, 1, 2, 3, 4, 5, 6])} className="px-2 py-1 text-xs border border-[#8a6a4f] hover:bg-[#6a5340]">Every Day</button>
-                            <button type="button" onClick={() => setScheduleDays([1, 2, 3, 4, 5])} className="px-2 py-1 text-xs border border-[#8a6a4f] hover:bg-[#6a5340]">Weekdays</button>
-                            <button type="button" onClick={() => setScheduleDays([0, 6])} className="px-2 py-1 text-xs border border-[#8a6a4f] hover:bg-[#6a5340]">Weekends</button>
+                            <button type="button" onClick={() => setScheduleDays([0, 1, 2, 3, 4, 5, 6])} className="px-2 py-1 text-xs border border-frame hover:bg-raised">Every Day</button>
+                            <button type="button" onClick={() => setScheduleDays([1, 2, 3, 4, 5])} className="px-2 py-1 text-xs border border-frame hover:bg-raised">Weekdays</button>
+                            <button type="button" onClick={() => setScheduleDays([0, 6])} className="px-2 py-1 text-xs border border-frame hover:bg-raised">Weekends</button>
                         </div>
                     </div>
                   </div>
@@ -248,9 +248,9 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({ isOpen, onClose, onAddHab
             {activeTab === 'presets' && (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96">
                 {PRE_CONFIGURED_HABITS.map(habit => (
-                   <button key={habit.name} onClick={() => handleSelectPreset(habit)} className="p-4 bg-[#2c2121] border-2 border-[#8a6a4f] text-left hover:bg-[#6a5340] hover:border-[#f5b342]">
-                    <p className="font-bold text-white">{habit.name}</p>
-                    <p className="text-xs text-[#b0a08f]">{habit.category}</p>
+                   <button key={habit.name} onClick={() => handleSelectPreset(habit)} className="p-4 bg-inset border-2 border-frame text-left hover:bg-raised hover:border-accent">
+                    <p className="font-bold text-ink-hi">{habit.name}</p>
+                    <p className="text-xs text-ink-dim">{habit.category}</p>
                   </button>
                 ))}
               </div>
@@ -258,11 +258,11 @@ const AddHabitModal: React.FC<AddHabitModalProps> = ({ isOpen, onClose, onAddHab
             {activeTab === 'templates' && (
                 <div className="space-y-4 max-h-96">
                     {SCHEDULED_HABIT_TEMPLATES.map(template => (
-                        <div key={template.name} className="p-4 bg-[#2c2121] border-2 border-[#8a6a4f]">
+                        <div key={template.name} className="p-4 bg-inset border-2 border-frame">
                             <div className="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-4">
                                 <div className="w-full">
-                                    <h4 className="text-lg text-white">{template.name}</h4>
-                                    <p className="text-sm text-[#b0a08f]">
+                                    <h4 className="text-lg text-ink-hi">{template.name}</h4>
+                                    <p className="text-sm text-ink-dim">
                                         Scheduled for: {
                                             template.scheduleDays.length === 7 ? 'Every Day' :
                                             template.scheduleDays.length === 2 && template.scheduleDays.includes(0) && template.scheduleDays.includes(6) ? 'Weekends' :

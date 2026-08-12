@@ -43,6 +43,9 @@ export interface PlayerProfile {
   unlockedBadges: { [badgeId: string]: number }; // e.g., { 'streak-master': 2 } for Silver tier
   totalQuestsCompleted?: number;
   settings?: PlayerSettings;
+  /** Which XP curve this profile's level was computed under. Absent means the
+   *  original exponential curve; the migration recalculates from totalXP. */
+  curveVersion?: number;
 }
 
 export interface PreConfiguredHabit {
@@ -186,6 +189,80 @@ export interface Task {
   pushedOn: string[];
   xpGained?: number; // recorded at completion so undo can refund exactly
   note?: string;
+}
+
+// --- Skins ---
+// The only thing in the app that turns a level-up into something you can see.
+// A skin repaints every surface by overriding colour tokens; rarer ones also
+// change the MATERIAL (border weight, shadow depth, surface texture), and a
+// few change with the age of the account itself.
+
+export type SkinRarity = 'common' | 'rare' | 'epic' | 'legend';
+
+export type SkinUnlock =
+  | { kind: 'default' }
+  | { kind: 'level'; level: number }
+  | { kind: 'badge'; badgeId: string; tier: number }
+  | { kind: 'feat'; featId: string }
+  /** Days since the account's first recorded activity. The one reward that
+   *  cannot be bought, rushed, or farmed — only outlived. */
+  | { kind: 'seniority'; days: number };
+
+/** Beyond colour: the physical character of the interface. */
+export interface SkinMaterial {
+  /** Border width in px for the main frame (default 4). */
+  borderWidth?: number;
+  /** Hard shadow offsets, e.g. '8px 8px 0px' and '4px 4px 0px'. */
+  shadowFar?: string;
+  shadowNear?: string;
+  /** A repeating CSS background painted over the canvas: scanlines, grain,
+   *  weave. Must be cheap and tile seamlessly. */
+  texture?: string;
+  /** Overlay drawn above everything (vignette, CRT curve). Pointer-events none. */
+  overlay?: string;
+  /** Moving weather: rain, petals, embers, drifting stars. */
+  fx?: SkinFx;
+  /** A text-shadow put on accent and title text — how a skin glows. */
+  glow?: string;
+}
+
+/**
+ * One animated layer of a skin's weather.
+ *
+ * Deliberately small: a seamless tiled sprite translated by exactly its own
+ * tile size. That keeps every effect a single compositor-driven transform
+ * rather than a per-frame repaint, and keeps the loop invisible.
+ */
+export interface SkinFxLayer {
+  /** Tiled background image for the layer. */
+  image: string;
+  /** Tile size in px — also the exact distance the layer travels per cycle. */
+  tile: number;
+  /** Seconds per cycle. */
+  duration: number;
+  motion: 'fall' | 'rise' | 'sweep';
+}
+
+export interface SkinFx {
+  /** The near layer. */
+  a: SkinFxLayer;
+  /** An optional far layer, for parallax. */
+  b?: SkinFxLayer;
+}
+
+export interface Skin {
+  id: string;
+  name: string;
+  blurb: string;
+  rarity: SkinRarity;
+  unlock: SkinUnlock;
+  /** Overrides applied on top of the Classic token set. A partial rather than
+   *  a full set so a token added later inherits a sane value everywhere
+   *  instead of rendering transparent in forty skins at once. */
+  tokens: Record<string, string>;
+  material?: SkinMaterial;
+  /** This skin changes as the account ages: moss creeps in, the frame cracks. */
+  livingId?: string;
 }
 
 export interface DayNote {

@@ -49,13 +49,13 @@ const HabitList: React.FC<HabitListProps> = ({ habits, completions, viewingDate,
 
   const AddNewHabitButton = isEditable ? (
     limitReached ? (
-      <div className="text-center p-4 bg-[#6a5340] border-4 border-dashed border-yellow-700 text-yellow-200 mt-4 shadow-[8px_8px_0px_#1a1515]">
+      <div className="text-center p-4 bg-raised border-4 border-dashed border-accent-dim text-warn mt-4 shadow-hard">
         <p className="font-bold">Daily Habit Limit Reached</p>
       </div>
     ) : (
       <button 
         onClick={onAddNewHabit} 
-        className="w-full text-center border-4 border-dashed border-[#6a5340] p-4 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515] hover:bg-[#6a5340] hover:border-yellow-400 transition-colors flex items-center justify-center gap-2 text-lg text-[#f0e9d6] mt-4"
+        className="w-full text-center border-4 border-dashed border-frame-dim p-4 bg-surface shadow-hard hover:bg-raised hover:border-accent transition-colors flex items-center justify-center gap-2 text-lg text-ink mt-4"
       >
         <PlusIcon className="w-6 h-6" />
         New Habit
@@ -66,8 +66,8 @@ const HabitList: React.FC<HabitListProps> = ({ habits, completions, viewingDate,
   if (habits.length === 0) {
     return (
       <>
-        <div className="text-center border-4 border-dashed border-[#6a5340] p-10 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
-          <p className="text-xl text-[#f0e9d6]">Your adventure awaits!</p>
+        <div className="text-center border-4 border-dashed border-frame-dim p-10 bg-surface shadow-hard">
+          <p className="text-xl text-ink">Your adventure awaits!</p>
           </div>
         {AddNewHabitButton}
       </>
@@ -77,8 +77,8 @@ const HabitList: React.FC<HabitListProps> = ({ habits, completions, viewingDate,
   if (habitsForDay.length === 0) {
      return (
       <>
-        <div className="text-center border-4 border-dashed border-[#6a5340] p-10 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
-          <p className="text-xl text-[#f0e9d6]">Rest day.</p>
+        <div className="text-center border-4 border-dashed border-frame-dim p-10 bg-surface shadow-hard">
+          <p className="text-xl text-ink">Rest day.</p>
         </div>
         {AddNewHabitButton}
       </>

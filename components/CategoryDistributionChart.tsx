@@ -20,8 +20,8 @@ const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = ({ c
     .sort((a, b) => (categoryCounts[b] ?? 0) - (categoryCounts[a] ?? 0));
 
   return (
-    <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515]">
-      <h3 className="text-xl text-white mb-4">Category Focus</h3>
+    <div className="bg-surface border-4 border-frame p-4 shadow-hard">
+      <h3 className="text-xl text-ink-hi mb-4">Category Focus</h3>
       <div className="space-y-3">
         {sortedCategories.length > 0 ? sortedCategories.map(category => {
           const count = categoryCounts[category] ?? 0;
@@ -29,10 +29,10 @@ const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = ({ c
           return (
             <div key={category}>
               <div className="flex justify-between items-baseline gap-2 text-sm mb-1">
-                <span className="text-white truncate">{category}</span>
-                <span className="text-[#b0a08f] text-xs whitespace-nowrap shrink-0">{count}×</span>
+                <span className="text-ink-hi truncate">{category}</span>
+                <span className="text-ink-dim text-xs whitespace-nowrap shrink-0">{count}×</span>
               </div>
-              <div className="w-full h-4 bg-[#2c2121] border-2 border-[#8a6a4f]">
+              <div className="w-full h-4 bg-inset border-2 border-frame">
                 <div
                   className="h-full"
                   style={{ width: `${percentage}%`, backgroundColor: CATEGORY_HEX[category] }}
@@ -40,7 +40,7 @@ const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = ({ c
               </div>
             </div>
           );
-        }) : <p className="text-[#b0a08f]">No wins logged yet.</p>}
+        }) : <p className="text-ink-dim">No wins logged yet.</p>}
       </div>
     </div>
   );

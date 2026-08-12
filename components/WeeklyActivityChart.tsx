@@ -30,8 +30,8 @@ const WeeklyActivityChart: React.FC<WeeklyActivityChartProps> = ({ completions }
   const maxCompletions = Math.max(...data.map(d => d.completions), 1);
 
   return (
-    <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515]">
-      <h3 className="text-xl text-white mb-4">Last 7 Days</h3>
+    <div className="bg-surface border-4 border-frame p-4 shadow-hard">
+      <h3 className="text-xl text-ink-hi mb-4">Last 7 Days</h3>
       {/* min-w-0 on the columns: without it each one refuses to shrink below
           its weekday label, and seven of those in the pixel font blow past a
           320px card. */}
@@ -40,12 +40,12 @@ const WeeklyActivityChart: React.FC<WeeklyActivityChartProps> = ({ completions }
           <div key={index} className="flex-1 min-w-0 flex flex-col items-center h-full">
             <div className="w-full h-full flex items-end justify-center">
                <div
-                 className="w-full bg-[#c98d2e]"
+                 className="w-full bg-accent-dim"
                  style={{ height: `${(day.completions / maxCompletions) * 100}%` }}
                  title={`${day.completions} completed on ${day.name}`}
                />
             </div>
-            <span className="text-[9px] text-[#b0a08f] mt-1 truncate max-w-full">{day.name}</span>
+            <span className="text-[9px] text-ink-dim mt-1 truncate max-w-full">{day.name}</span>
           </div>
         ))}
       </div>

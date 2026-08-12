@@ -17,6 +17,8 @@ export interface GameSnapshot {
   quits?: unknown[];
   dayNotes?: Record<string, unknown>;
   tasks?: unknown[];
+  activeSkinId?: string;
+  seenSkins?: string[];
   questsLastGenerated: string | null;
   savedAt: string; // ISO date string
 }

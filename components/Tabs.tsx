@@ -30,7 +30,7 @@ const TabButton: React.FC<{
       className={`
         flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-0.5 py-2 sm:p-2 text-base
         transition-colors duration-200
-        ${isActive ? 'bg-[#8a6a4f] text-white' : 'bg-[#4a3f36] text-[#b0a08f] hover:bg-[#6a5340]'}
+        ${isActive ? 'bg-frame text-ink-hi' : 'bg-surface text-ink-dim hover:bg-raised'}
       `}
     >
       {icon}
@@ -42,7 +42,7 @@ const TabButton: React.FC<{
 
 const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab }) => {
   return (
-    <div className="flex overflow-hidden border-4 border-[#8a6a4f] shadow-[8px_8px_0px_#1a1515] mt-8">
+    <div className="flex overflow-hidden border-4 border-frame shadow-hard mt-8">
       <TabButton
         label="Habits"
         shortLabel="Habits"
@@ -50,7 +50,7 @@ const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab }) => {
         isActive={activeTab === 'habits'}
         onClick={() => setActiveTab('habits')}
       />
-      <div className="w-px sm:w-1 bg-[#8a6a4f] shrink-0" />
+      <div className="w-px sm:w-1 bg-frame shrink-0" />
       <TabButton
         label="Quests"
         shortLabel="Quests"
@@ -58,7 +58,7 @@ const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab }) => {
         isActive={activeTab === 'quests'}
         onClick={() => setActiveTab('quests')}
       />
-      <div className="w-px sm:w-1 bg-[#8a6a4f] shrink-0" />
+      <div className="w-px sm:w-1 bg-frame shrink-0" />
       <TabButton
         label="Battles"
         shortLabel="Battles"
@@ -66,7 +66,7 @@ const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab }) => {
         isActive={activeTab === 'battles'}
         onClick={() => setActiveTab('battles')}
       />
-      <div className="w-px sm:w-1 bg-[#8a6a4f] shrink-0" />
+      <div className="w-px sm:w-1 bg-frame shrink-0" />
       <TabButton
         label="Calendar"
         shortLabel="Cal."
@@ -74,7 +74,7 @@ const Tabs: React.FC<TabsProps> = ({ activeTab, setActiveTab }) => {
         isActive={activeTab === 'calendar'}
         onClick={() => setActiveTab('calendar')}
       />
-      <div className="w-px sm:w-1 bg-[#8a6a4f] shrink-0" />
+      <div className="w-px sm:w-1 bg-frame shrink-0" />
       <TabButton
         label="Progress"
         shortLabel="Stats"

@@ -69,9 +69,9 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, todaysStatus, isEditable, 
   const isSkipped = todaysStatus === CompletionStatus.SKIPPED;
 
   const container = [
-    'p-3 pm:p-4 bg-[#4a3f36] border-4 shadow-[8px_8px_0px_#1a1515] transition-all duration-200',
-    canPerformAction ? 'hover:translate-x-1 hover:translate-y-1 hover:shadow-[4px_4px_0px_#1a1515]' : '',
-    isFailed ? 'border-orange-600' : 'border-[#8a6a4f]',
+    'p-3 pm:p-4 bg-surface border-4 shadow-hard transition-all duration-200',
+    canPerformAction ? 'hover:translate-x-1 hover:translate-y-1 hover:shadow-hard-sm' : '',
+    isFailed ? 'border-miss-hi' : 'border-frame',
     isSkipped ? 'opacity-70' : '',
   ].join(' ');
 
@@ -92,15 +92,15 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, todaysStatus, isEditable, 
           }}
           title={habit.category}
         >
-          <CategoryIcon className="w-4 h-4 pm:w-5 pm:h-5 text-white" />
+          <CategoryIcon className="w-4 h-4 pm:w-5 pm:h-5 text-ink-hi" />
         </span>
 
-        <p className={`flex-1 min-w-0 text-base pm:text-lg leading-snug text-[#f0e9d6] break-words ${isDone ? 'line-through' : ''}`}>
+        <p className={`flex-1 min-w-0 text-base pm:text-lg leading-snug text-ink break-words ${isDone ? 'line-through' : ''}`}>
           {habit.name}
         </p>
 
         {habit.streak > 0 && (
-          <span className="shrink-0 flex items-center gap-1 text-orange-400 font-bold text-sm" title={`${habit.streak} day streak`}>
+          <span className="shrink-0 flex items-center gap-1 text-warn font-bold text-sm" title={`${habit.streak} day streak`}>
             <StreakIcon className="w-4 h-4" />
             {habit.streak}
           </span>
@@ -108,11 +108,11 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, todaysStatus, isEditable, 
       </div>
 
       {/* Row 2 — metadata, one line, muted. */}
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] pm:text-xs text-[#b0a08f]">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] pm:text-xs text-ink-dim">
         <span>{habit.category}</span>
-        <span className="text-purple-300">+{xpGained} XP</span>
+        <span className="text-xp">+{xpGained} XP</span>
         {habit.reminderTime && (
-          <span className="flex items-center gap-1 text-cyan-300">
+          <span className="flex items-center gap-1 text-info">
             <ClockIcon className="w-3 h-3" />
             {formatTimeForDisplay(habit.reminderTime)}
           </span>
@@ -125,7 +125,7 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, todaysStatus, isEditable, 
           <button
             onClick={() => onUndo(habit.id)}
             title={undoTitle}
-            className={`${actionBase} flex-1 bg-[#6a5340] hover:bg-[#8a6a4f] border-[#4a3f36] text-[#f0e9d6]`}
+            className={`${actionBase} flex-1 bg-raised hover:bg-frame border-surface text-ink`}
           >
             <UndoIcon className="w-5 h-5" />
             {isDone ? 'Done' : isFailed ? 'Missed' : 'Skipped'}
@@ -137,7 +137,7 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, todaysStatus, isEditable, 
               disabled={!canPerformAction}
               title="Complete habit"
               aria-label="Complete habit"
-              className={`${actionBase} flex-[3] bg-green-700 hover:bg-green-600 border-green-900 text-white`}
+              className={`${actionBase} flex-[3] bg-good hover:bg-good-hi border-good-edge text-ink-hi`}
             >
               <CheckIcon className="w-5 h-5" />
               <span className="hidden xs:inline">Done</span>
@@ -147,7 +147,7 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, todaysStatus, isEditable, 
               disabled={!canPerformAction}
               title="Mark as missed"
               aria-label="Mark as missed"
-              className={`${actionBase} flex-1 bg-orange-800 hover:bg-orange-700 border-orange-900 text-white`}
+              className={`${actionBase} flex-1 bg-miss hover:bg-miss-hi border-miss-edge text-ink-hi`}
             >
               <FailIcon className="w-5 h-5" />
             </button>
@@ -157,30 +157,30 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, todaysStatus, isEditable, 
                 disabled={!isEditable}
                 title="More options"
                 aria-label="More options"
-                className={`${actionBase} w-11 bg-[#6a5340] hover:bg-[#8a6a4f] border-[#4a3f36] text-[#f0e9d6]`}
+                className={`${actionBase} w-11 bg-raised hover:bg-frame border-surface text-ink`}
               >
                 <MoreIcon className="w-5 h-5" />
               </button>
               {isMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-[#2c2121] border-2 border-[#8a6a4f] shadow-lg z-10">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-inset border-2 border-frame shadow-lg z-10">
                   <button
                     onClick={() => { onSkip(habit.id); setIsMenuOpen(false); }}
                     disabled={!canPerformAction}
                     title="Won't break your streak"
-                    className="flex items-center gap-2 w-full px-3 py-2 text-left text-sm hover:bg-[#4a3f36] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-left text-sm hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <SkipIcon className="w-4 h-4" /> Skip Today
                   </button>
                   <button
                     onClick={() => { onDuplicate(habit); setIsMenuOpen(false); }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-left text-sm hover:bg-[#4a3f36]"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-left text-sm hover:bg-surface"
                   >
                     <DuplicateIcon className="w-4 h-4" /> Duplicate Habit
                   </button>
                   <button
                     onClick={() => { onArchive(habit); setIsMenuOpen(false); }}
                     title="Hidden from your list, history kept"
-                    className="flex items-center gap-2 w-full px-3 py-2 text-left text-sm text-yellow-300 hover:bg-[#4a3f36]"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-left text-sm text-warn hover:bg-surface"
                   >
                     <ArchiveIcon className="w-4 h-4" /> Archive Habit
                   </button>

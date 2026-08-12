@@ -29,22 +29,22 @@ const BadgeItem: React.FC<BadgeItemProps> = ({ badge, unlockedTierNum, profile, 
   const displayDescription = currentTier ? currentTier.description : badge.tiers[0].description;
   
   return (
-    <div className={`flex flex-col p-4 bg-[#4a3f36] border-4 border-[#8a6a4f] shadow-[8px_8px_0px_#1a1515] ${!isUnlocked ? 'opacity-70' : ''}`}>
+    <div className={`flex flex-col p-4 bg-surface border-4 border-frame shadow-hard ${!isUnlocked ? 'opacity-70' : ''}`}>
       <div className="flex items-start gap-4 flex-grow">
         <div className="flex-shrink-0">
           {isUnlocked ? (
-            <Icon className="w-16 h-16 text-yellow-400" />
+            <Icon className="w-16 h-16 text-accent" />
           ) : (
-            <div className="w-16 h-16 bg-[#2c2121] border-2 border-[#6a5340] flex items-center justify-center">
-              <QuestionMarkIcon className="w-10 h-10 text-[#6a5340]" />
+            <div className="w-16 h-16 bg-inset border-2 border-frame-dim flex items-center justify-center">
+              <QuestionMarkIcon className="w-10 h-10 text-ink-faint" />
             </div>
           )}
         </div>
         <div className="flex-1">
-          <h3 className={`text-lg ${isUnlocked ? 'text-white' : 'text-[#b0a08f]'}`}>
+          <h3 className={`text-lg ${isUnlocked ? 'text-ink-hi' : 'text-ink-dim'}`}>
               {isUnlocked ? displayName : 'Locked Achievement'}
           </h3>
-          <p className="text-sm mt-1 text-[#b0a08f]">
+          <p className="text-sm mt-1 text-ink-dim">
               {displayDescription}
           </p>
         </div>
@@ -52,13 +52,13 @@ const BadgeItem: React.FC<BadgeItemProps> = ({ badge, unlockedTierNum, profile, 
        
        <div className="mt-4 pt-2 flex-grow flex flex-col justify-end">
         {isMaxed && isUnlocked ? (
-          <div className="flex items-center justify-center gap-2 text-green-400">
+          <div className="flex items-center justify-center gap-2 text-good-soft">
             <CheckIcon className="w-6 h-6" />
             <span className="font-bold">Completed!</span>
           </div>
         ) : nextTier ? (
             <div>
-              <p className="text-xs text-yellow-300 mb-1">Next: {nextTier.name}</p>
+              <p className="text-xs text-warn mb-1">Next: {nextTier.name}</p>
               <ProgressBar 
                 value={progress}
                 max={nextTier.target}
@@ -68,7 +68,7 @@ const BadgeItem: React.FC<BadgeItemProps> = ({ badge, unlockedTierNum, profile, 
           ) : (
              // Case for a locked badge with only one tier
             <div>
-               <p className="text-xs text-yellow-300 mb-1">Progress</p>
+               <p className="text-xs text-warn mb-1">Progress</p>
                <ProgressBar
                  value={progress}
                  max={badge.tiers[0].target}

@@ -44,23 +44,23 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] text-left flex justify-between items-center"
+                className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent text-left flex justify-between items-center"
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
             >
                 <span>{displayValue}</span>
-                <ClockIcon className="w-5 h-5 text-[#b0a08f]" />
+                <ClockIcon className="w-5 h-5 text-ink-dim" />
             </button>
             {isOpen && (
                 <div 
-                    className="absolute z-10 w-full mt-1 bg-[#2c2121] border-2 border-[#8a6a4f] max-h-48 overflow-y-auto"
+                    className="absolute z-10 w-full mt-1 bg-inset border-2 border-frame max-h-48 overflow-y-auto"
                     role="listbox"
                 >
                     <button
                         role="option"
                         aria-selected={value === ''}
                         onClick={() => handleSelect('')}
-                        className="w-full text-left px-3 py-2 hover:bg-[#4a3f36]"
+                        className="w-full text-left px-3 py-2 hover:bg-surface"
                     >
                         No Reminder
                     </button>
@@ -70,7 +70,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
                             role="option"
                             aria-selected={value === time}
                             onClick={() => handleSelect(time)}
-                            className="w-full text-left px-3 py-2 hover:bg-[#4a3f36]"
+                            className="w-full text-left px-3 py-2 hover:bg-surface"
                         >
                             {formatTimeForDisplay(time)}
                         </button>

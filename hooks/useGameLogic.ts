@@ -3,13 +3,17 @@ import { Habit, PlayerProfile, Quest, Badge, Completion, CompletionStatus, Habit
 import { useLocalStorage } from './useLocalStorage';
 // Fix: Removed 'subDays' from date-fns import as it is causing an error.
 import { formatISO, differenceInCalendarDays, isSameDay } from 'date-fns';
-import { calculateXP, calculateXpToNextLevel } from '../utils/xp';
+import { calculateXP, calculateXpToNextLevel, migrateLevel, XP_CURVE_VERSION } from '../utils/xp';
 import { generateDailyQuests } from '../utils/quests';
 import { BADGE_CATALOG, checkAndUnlockBadges } from '../utils/badges';
 import { showAppNotification } from '../utils/notifications';
 import { GameSnapshot, saveMirror, loadMirror, addSnapshot, getLatestSnapshot, requestPersistentStorage } from '../utils/db';
 import { QUIT_MILESTONES, URGE_RESIST_XP, URGE_XP_DAILY_CAP, dueMilestones } from '../utils/quits';
 import { dayKey as taskDayKey, pickDailyTask, taskXp } from '../utils/tasks';
+import { SKINS, getSkin, DEFAULT_SKIN_ID } from '../utils/skinCatalog';
+import { applySkin } from '../utils/skins';
+import { resolveShownSkin, useSkinPreview } from './useSkinPreview';
+import { isUnlocked, seniorityDays, UnlockContext } from '../utils/skinUnlocks';
 
 // --- Push Notification Server ---
 // Optional: set VITE_PUSH_SERVER_URL (e.g. in .env.local or on your host) to enable
@@ -50,6 +54,11 @@ export const useGameLogic = () => {
   const [quits, setQuits] = useLocalStorage<Quit[]>('quits', []);
   const [dayNotes, setDayNotes] = useLocalStorage<{ [dateKey: string]: DayNote }>('dayNotes', {});
   const [tasks, setTasks] = useLocalStorage<Task[]>('tasks', []);
+  const [activeSkinId, setActiveSkinId] = useLocalStorage<string>('activeSkin', DEFAULT_SKIN_ID);
+  // Which skins the player has SEEN unlock. Unlocking itself is derived from
+  // live data every render, so this only exists to know what is new — a skin
+  // can never be lost by a stat dipping back below its threshold.
+  const [seenSkins, setSeenSkins] = useLocalStorage<string[]>('seenSkins', []);
   const [questsLastGenerated, setQuestsLastGenerated] = useLocalStorage<string | null>('questsLastGenerated', null);
   const [autoBackupEnabled, setAutoBackupEnabled] = useLocalStorage<boolean>('autoBackupEnabled', true);
   const [lastAutoBackupDate, setLastAutoBackupDate] = useLocalStorage<string | null>('lastAutoBackupDate', null);
@@ -132,6 +141,54 @@ export const useGameLogic = () => {
       }
   }, [habits, profile, setHabits, setProfile]); 
 
+  // The XP curve was exponential and stalled out around level 18. Recompute
+  // the level from lifetime XP, which is the ground truth and is untouched, so
+  // a curve change is a recalculation rather than a loss. Runs exactly once.
+  useEffect(() => {
+    if (profile.curveVersion === XP_CURVE_VERSION) return;
+    setProfile(prev => ({
+      ...prev,
+      ...migrateLevel(prev),
+      curveVersion: XP_CURVE_VERSION,
+    }));
+  }, [profile.curveVersion, setProfile]);
+
+  // --- Skins ---
+  const skinPreview = useSkinPreview();
+  const unlockCtx: UnlockContext = {
+    profile, habits, completions, quits, tasks, dayNotes,
+    seniorityDays: seniorityDays(habits, quits, tasks, completions),
+  };
+  const unlockedSkinIds = SKINS.filter(s => isUnlocked(s.unlock, unlockCtx)).map(s => s.id);
+
+  // A skin the player selected but has not (or no longer) unlocked must never
+  // be applied — otherwise a restored backup could paint the app with
+  // something never earned.
+  const activeSkin = getSkin(unlockedSkinIds.includes(activeSkinId) ? activeSkinId : DEFAULT_SKIN_ID);
+
+  // A living skin keeps ageing after it is earned, so what gets painted
+  // depends on the account's age as well as which skin is worn — and, in the
+  // preview workshop, on an age the tester made up.
+  const { skin: shownSkin, stage: ageStage } =
+    resolveShownSkin(activeSkin, skinPreview, unlockCtx.seniorityDays);
+
+  useEffect(() => {
+    applySkin(shownSkin, document.documentElement, ageStage);
+  }, [shownSkin, ageStage]);
+
+  const newlyUnlockedSkins = SKINS.filter(
+    s => unlockedSkinIds.includes(s.id) && !seenSkins.includes(s.id) && s.unlock.kind !== 'default',
+  );
+
+  const acknowledgeSkins = useCallback(() => {
+    setSeenSkins(SKINS.filter(s => isUnlocked(s.unlock, unlockCtx)).map(s => s.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setSeenSkins, profile, habits, completions, quits, tasks]);
+
+  const selectSkin = useCallback((id: string) => {
+    setActiveSkinId(id);
+  }, [setActiveSkinId]);
+
   const hasMeaningfulData = habits.length > 0 || completions.length > 0 || quits.length > 0 || tasks.length > 0 || profile.totalXP > 0;
 
   // Ask the browser to protect this origin's storage from eviction (best effort).
@@ -173,9 +230,10 @@ export const useGameLogic = () => {
     setQuits((recoveryData.quits as Quit[]) || []);
     setDayNotes((recoveryData.dayNotes as { [dateKey: string]: DayNote }) || {});
     setTasks((recoveryData.tasks as Task[]) || []);
+    setActiveSkinId((recoveryData.activeSkinId as string) || DEFAULT_SKIN_ID);
     setQuestsLastGenerated(recoveryData.questsLastGenerated || null);
     setRecoveryData(null);
-  }, [recoveryData, setHabits, setCompletions, setProfile, setQuests, setQuits, setDayNotes, setTasks, setQuestsLastGenerated]);
+  }, [recoveryData, setHabits, setCompletions, setProfile, setQuests, setQuits, setDayNotes, setTasks, setActiveSkinId, setSeenSkins, setQuestsLastGenerated]);
 
   const dismissRecovery = useCallback(() => {
     setRecoveryData(null);
@@ -186,10 +244,10 @@ export const useGameLogic = () => {
   useEffect(() => {
     if (!hasMeaningfulData) return;
     const timeout = window.setTimeout(() => {
-      saveMirror({ habits, completions, profile, quests, quits, dayNotes, tasks, questsLastGenerated, savedAt: new Date().toISOString() });
+      saveMirror({ habits, completions, profile, quests, quits, dayNotes, tasks, activeSkinId, seenSkins, questsLastGenerated, savedAt: new Date().toISOString() });
     }, 1000);
     return () => window.clearTimeout(timeout);
-  }, [habits, completions, profile, quests, quits, dayNotes, tasks, questsLastGenerated, hasMeaningfulData]);
+  }, [habits, completions, profile, quests, quits, dayNotes, tasks, activeSkinId, seenSkins, questsLastGenerated, hasMeaningfulData]);
 
   // Weekly snapshot history in IndexedDB (keeps the last 8).
   useEffect(() => {
@@ -197,7 +255,7 @@ export const useGameLogic = () => {
 
     const performAutoBackup = () => {
       console.log("Performing weekly auto-backup snapshot...");
-      addSnapshot({ habits, completions, profile, quests, quits, dayNotes, tasks, questsLastGenerated, savedAt: new Date().toISOString() });
+      addSnapshot({ habits, completions, profile, quests, quits, dayNotes, tasks, activeSkinId, seenSkins, questsLastGenerated, savedAt: new Date().toISOString() });
       setLastAutoBackupDate(new Date().toISOString());
     };
 
@@ -812,7 +870,7 @@ export const useGameLogic = () => {
 
   const handleExportData = useCallback(() => {
     const backupData = {
-      version: 3,
+      version: 4,
       exportedAt: new Date().toISOString(),
       data: {
         habits,
@@ -822,6 +880,8 @@ export const useGameLogic = () => {
         quits,
         dayNotes,
         tasks,
+        activeSkinId,
+        seenSkins,
         questsLastGenerated,
       }
     };
@@ -874,6 +934,8 @@ export const useGameLogic = () => {
       setQuits(parsedData.quits || []); // absent from v1 backups → empty
       setDayNotes(parsedData.dayNotes || {});
       setTasks(parsedData.tasks || []); // absent from v1/v2 backups -> empty
+      setActiveSkinId(parsedData.activeSkinId || DEFAULT_SKIN_ID);
+      setSeenSkins(parsedData.seenSkins || []);
       setQuestsLastGenerated(parsedData.questsLastGenerated || null);
       setImportFileContent(null);
       alert('Data restored successfully! The app will now reload.');
@@ -1238,6 +1300,15 @@ export const useGameLogic = () => {
     dayNotes,
     tasks,
     dailyTask,
+    skins: SKINS,
+    activeSkin,
+    shownSkin,
+    skinPreview,
+    unlockedSkinIds,
+    newlyUnlockedSkins,
+    acknowledgeSkins,
+    selectSkin,
+    unlockCtx,
     handleAddTask,
     handleEditTask,
     handleCompleteTask,

@@ -31,10 +31,10 @@ const TodaysTaskCard: React.FC<TodaysTaskCardProps> = ({ task, onComplete, onPus
     return (
       <button
         onClick={onOpenBoard}
-        className="w-full mt-4 text-left bg-[#4a3f36] border-4 border-[#8a6a4f] p-3 shadow-[8px_8px_0px_#1a1515] hover:bg-[#6a5340] transition-colors"
+        className="w-full mt-4 text-left bg-surface border-4 border-frame p-3 shadow-hard hover:bg-raised transition-colors"
       >
-        <p className="text-xs text-[#b0a08f] uppercase tracking-wider">Side Quest</p>
-        <p className="text-sm text-[#f0e9d6] mt-1">Everything pushed for today.</p>
+        <p className="text-xs text-ink-dim uppercase tracking-wider">Side Quest</p>
+        <p className="text-sm text-ink mt-1">Everything pushed for today.</p>
       </button>
     );
   }
@@ -45,12 +45,12 @@ const TodaysTaskCard: React.FC<TodaysTaskCardProps> = ({ task, onComplete, onPus
   const dueIn = task.dueDate ? differenceInCalendarDays(new Date(task.dueDate), new Date()) : null;
 
   return (
-    <div className="mt-4 bg-[#4a3f36] border-4 border-[#8a6a4f] p-3 pm:p-4 shadow-[8px_8px_0px_#1a1515]">
+    <div className="mt-4 bg-surface border-4 border-frame p-3 pm:p-4 shadow-hard">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-[#b0a08f] uppercase tracking-wider truncate">Side Quest</p>
+        <p className="text-xs text-ink-dim uppercase tracking-wider truncate">Side Quest</p>
         <button
           onClick={onOpenBoard}
-          className="text-[10px] text-[#b0a08f] hover:text-white underline shrink-0"
+          className="text-[10px] text-ink-dim hover:text-ink-hi underline shrink-0"
         >
           see all
         </button>
@@ -65,22 +65,22 @@ const TodaysTaskCard: React.FC<TodaysTaskCardProps> = ({ task, onComplete, onPus
           }}
           title={task.category}
         >
-          <CategoryIcon className="w-4 h-4 pm:w-5 pm:h-5 text-white" />
+          <CategoryIcon className="w-4 h-4 pm:w-5 pm:h-5 text-ink-hi" />
         </span>
-        <p className="flex-1 min-w-0 text-base pm:text-lg leading-snug text-[#f0e9d6] break-words">
+        <p className="flex-1 min-w-0 text-base pm:text-lg leading-snug text-ink break-words">
           {task.name}
         </p>
       </div>
 
       {/* Every fact on this line is computed, never asserted. */}
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] pm:text-xs text-[#b0a08f]">
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] pm:text-xs text-ink-dim">
         <span className="flex items-center gap-1">
           <HourglassIcon className="w-4 h-4" />
           {age === 0 ? 'added today' : `${age}d waiting`}
         </span>
         {pushes > 0 && <span>pushed {pushes}×</span>}
         {dueIn !== null && (
-          <span className={dueIn <= 3 ? 'text-orange-300' : ''}>
+          <span className={dueIn <= 3 ? 'text-warn' : ''}>
             {dueIn < 0
               ? `due ${Math.abs(dueIn)}d ago`
               : dueIn === 0
@@ -91,13 +91,13 @@ const TodaysTaskCard: React.FC<TodaysTaskCardProps> = ({ task, onComplete, onPus
       </div>
 
       {task.note && (
-        <p className="mt-2 text-[11px] text-[#d8cbb8] italic break-words">{task.note}</p>
+        <p className="mt-2 text-[11px] text-ink-soft italic break-words">{task.note}</p>
       )}
 
       <div className="mt-3 flex gap-2">
         <button
           onClick={() => onComplete(task.id)}
-          className="flex-[3] flex items-center justify-center gap-2 h-11 border-4 border-green-900 bg-green-700 hover:bg-green-600 text-white text-sm transition-colors"
+          className="flex-[3] flex items-center justify-center gap-2 h-11 border-4 border-good-edge bg-good hover:bg-good-hi text-ink-hi text-sm transition-colors"
         >
           <CheckIcon className="w-5 h-5" />
           Done
@@ -106,7 +106,7 @@ const TodaysTaskCard: React.FC<TodaysTaskCardProps> = ({ task, onComplete, onPus
           onClick={() => onPush(task.id)}
           title="Not today"
           aria-label="Not today"
-          className="flex-1 flex items-center justify-center gap-2 h-11 border-4 border-[#4a3f36] bg-[#6a5340] hover:bg-[#8a6a4f] text-[#f0e9d6] text-sm transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 h-11 border-4 border-surface bg-raised hover:bg-frame text-ink text-sm transition-colors"
         >
           <SnoozeIcon className="w-5 h-5" />
         </button>

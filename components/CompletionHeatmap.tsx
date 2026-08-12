@@ -64,21 +64,21 @@ const CompletionHeatmap: React.FC<CompletionHeatmapProps> = ({ completions }) =>
   );
 
   const getCellColor = (count: number) => {
-    if (count === 0) return 'bg-[#2c2121]';
-    if (count <= 1) return 'bg-yellow-700';
-    if (count <= 3) return 'bg-yellow-500';
-    return 'bg-yellow-300';
+    if (count === 0) return 'bg-inset';
+    if (count <= 1) return 'bg-accent-dim';
+    if (count <= 3) return 'bg-accent';
+    return 'bg-warn';
   };
 
   const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515]">
-      <p className="text-[10px] text-[#b0a08f] mb-2">
+    <div className="bg-surface border-4 border-frame p-4 shadow-hard">
+      <p className="text-[10px] text-ink-dim mb-2">
         {format(firstDay, 'MMM d')} - today · {weeks} weeks
       </p>
       <div ref={containerRef} className="flex gap-1">
-        <div className="flex flex-col shrink-0 text-xs text-[#b0a08f]" style={{ width: LABEL_W }}>
+        <div className="flex flex-col shrink-0 text-xs text-ink-dim" style={{ width: LABEL_W }}>
           {dayLabels.map((day, i) => (
             <div
               key={day}
@@ -103,12 +103,12 @@ const CompletionHeatmap: React.FC<CompletionHeatmapProps> = ({ completions }) =>
           })}
         </div>
       </div>
-      <div className="flex justify-end items-center gap-2 mt-2 text-xs text-[#b0a08f]">
+      <div className="flex justify-end items-center gap-2 mt-2 text-xs text-ink-dim">
         <span>Less</span>
-        <div className="w-3 h-3 bg-[#2c2121]" />
-        <div className="w-3 h-3 bg-yellow-700" />
-        <div className="w-3 h-3 bg-yellow-500" />
-        <div className="w-3 h-3 bg-yellow-300" />
+        <div className="w-3 h-3 bg-inset" />
+        <div className="w-3 h-3 bg-accent-dim" />
+        <div className="w-3 h-3 bg-accent" />
+        <div className="w-3 h-3 bg-warn" />
         <span>More</span>
       </div>
     </div>

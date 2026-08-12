@@ -58,20 +58,20 @@ const DailyProgressBanner: React.FC<DailyProgressBannerProps> = ({ habits, compl
   };
 
   const segmentColor = (status: CompletionStatus | null): string => {
-    if (status === CompletionStatus.COMPLETED) return '#3b9b73';
-    if (status === CompletionStatus.FAILED) return '#c84141';
-    if (status === CompletionStatus.SKIPPED) return '#8a7a68';
-    return '#2c2121';
+    if (status === CompletionStatus.COMPLETED) return 'var(--good-soft)';
+    if (status === CompletionStatus.FAILED) return 'var(--cat-health)';
+    if (status === CompletionStatus.SKIPPED) return 'var(--neutral)';
+    return 'var(--inset)';
   };
 
   return (
-    <div className="mt-4 bg-[#4a3f36] border-4 border-[#8a6a4f] p-3 shadow-[8px_8px_0px_#1a1515]">
+    <div className="mt-4 bg-surface border-4 border-frame p-3 shadow-hard">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-xs text-[#b0a08f] uppercase tracking-wider truncate">
+        <p className="text-xs text-ink-dim uppercase tracking-wider truncate">
           {isToday ? 'Today' : format(viewingDate, 'MMM d')}
         </p>
-        <p className="text-sm text-white whitespace-nowrap shrink-0">
-          <span className="text-[#f5b342]">{day.done}</span>/{day.total} · {pct}%
+        <p className="text-sm text-ink-hi whitespace-nowrap shrink-0">
+          <span className="text-accent">{day.done}</span>/{day.total} · {pct}%
         </p>
       </div>
 
@@ -80,27 +80,27 @@ const DailyProgressBanner: React.FC<DailyProgressBannerProps> = ({ habits, compl
           {day.statuses.map((status, i) => (
             <div
               key={i}
-              className="flex-1 h-4 border-2 border-[#1f1717]"
+              className="flex-1 h-4 border-2 border-inset-deep"
               style={{ backgroundColor: segmentColor(status) }}
             />
           ))}
         </div>
       ) : (
-        <div className="w-full h-4 bg-[#2c2121] border-2 border-[#1f1717] mt-2">
-          <div className="h-full bg-[#3b9b73]" style={{ width: `${pct}%` }} />
+        <div className="w-full h-4 bg-inset border-2 border-inset-deep mt-2">
+          <div className="h-full bg-good-soft" style={{ width: `${pct}%` }} />
         </div>
       )}
 
       <div className="flex items-center justify-between gap-3 mt-2">
-        <p className="text-[10px] sm:text-xs text-[#d8cbb8] min-w-0 break-words">{message()}</p>
+        <p className="text-[10px] sm:text-xs text-ink-soft min-w-0 break-words">{message()}</p>
         {day.xp > 0 && (
-          <span className="flex items-center gap-1 text-xs text-[#f5b342] whitespace-nowrap shrink-0">
+          <span className="flex items-center gap-1 text-xs text-accent whitespace-nowrap shrink-0">
             <CoinIcon className="w-4 h-4" />
             +{day.xp}
           </span>
         )}
         {day.done === day.total && (
-          <CheckIcon className="w-4 h-4 text-[#3b9b73] shrink-0" />
+          <CheckIcon className="w-4 h-4 text-good-soft shrink-0" />
         )}
       </div>
     </div>

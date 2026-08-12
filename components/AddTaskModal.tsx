@@ -74,13 +74,13 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSubmit, 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div className="w-full max-w-md bg-[#4a3f36] border-4 border-[#8a6a4f] shadow-[8px_8px_0px_#1a1515] p-4 pm:p-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-scrim flex items-center justify-center p-4 z-50">
+      <div className="w-full max-w-md bg-surface border-4 border-frame shadow-hard p-4 pm:p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4 gap-2">
-          <h2 className="text-lg pm:text-xl text-[#f5b342] min-w-0 break-words">
+          <h2 className="text-lg pm:text-xl text-accent min-w-0 break-words">
             {editing ? 'Edit Side Quest' : 'New Side Quest'}
           </h2>
-          <button onClick={onClose} aria-label="Close" className="text-3xl text-[#f0e9d6] hover:text-red-500 leading-none shrink-0">&times;</button>
+          <button onClick={onClose} aria-label="Close" className="text-3xl text-ink hover:text-danger-hi leading-none shrink-0">&times;</button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -94,7 +94,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSubmit, 
               placeholder="e.g. Book the dentist, prune the hedge..."
               required
               autoFocus
-              className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] placeholder:text-[#6a5340]"
+              className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent placeholder:text-ink-faint"
             />
           </div>
 
@@ -109,13 +109,13 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSubmit, 
                   aria-pressed={size === value}
                   className={`flex flex-col items-center gap-1 py-2 border-2 transition-colors ${
                     size === value
-                      ? 'bg-[#8a6a4f] border-[#f5b342] text-white'
-                      : 'bg-[#2c2121] border-[#6a5340] text-[#b0a08f] hover:bg-[#4a3f36]'
+                      ? 'bg-frame border-accent text-ink-hi'
+                      : 'bg-inset border-frame-dim text-ink-dim hover:bg-surface'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="text-[10px]">{label}</span>
-                  <span className="text-[8px] text-[#b0a08f]">{hint}</span>
+                  <span className="text-[8px] text-ink-dim">{hint}</span>
                 </button>
               ))}
             </div>
@@ -134,11 +134,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSubmit, 
                     onClick={() => setCategory(cat)}
                     aria-pressed={selected}
                     className={`flex items-center gap-2 px-2 py-2 border-2 text-[10px] pm:text-xs transition-colors ${
-                      selected ? 'border-[#f5b342] text-white' : 'border-[#6a5340] text-[#b0a08f]'
+                      selected ? 'border-accent text-ink-hi' : 'border-frame-dim text-ink-dim'
                     }`}
                     style={selected
                       ? { backgroundColor: CATEGORY_HEX[cat], boxShadow: `3px 3px 0px ${CATEGORY_SHADOW_HEX[cat]}` }
-                      : { backgroundColor: '#2c2121' }}
+                      : { backgroundColor: 'var(--inset)' }}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
                     <span className="min-w-0 truncate">{cat}</span>
@@ -157,9 +157,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSubmit, 
                 value={since}
                 max={new Date().toISOString().slice(0, 10)}
                 onChange={e => setSince(e.target.value)}
-                className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342]"
+                className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent"
               />
-              <p className="text-xs text-amber-300 mt-1">That wait was real. Count it.</p>
+              <p className="text-xs text-warn mt-1">That wait was real. Count it.</p>
             </div>
           )}
 
@@ -170,11 +170,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSubmit, 
               type="date"
               value={dueDate}
               onChange={e => setDueDate(e.target.value)}
-              className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342]"
+              className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent"
             />
             {/* Leaving this blank is the normal case. A made-up due date is the
                 thing that teaches you to ignore red badges. */}
-            <p className="text-xs text-amber-300 mt-1">Only if one truly exists.</p>
+            <p className="text-xs text-warn mt-1">Only if one truly exists.</p>
           </div>
 
           <div>
@@ -185,7 +185,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSubmit, 
               onChange={e => setNote(e.target.value)}
               rows={2}
               placeholder="Phone number, what to bring, first step..."
-              className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] text-sm placeholder:text-[#6a5340]"
+              className="w-full p-2 bg-inset border-2 border-frame focus:outline-none focus:border-accent text-sm placeholder:text-ink-faint"
             />
           </div>
 
@@ -193,7 +193,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSubmit, 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-sm text-[#b0a08f] border-2 border-dashed border-[#6a5340] hover:text-white"
+              className="flex-1 px-4 py-2 text-sm text-ink-dim border-2 border-dashed border-frame-dim hover:text-ink-hi"
             >
               Cancel
             </button>

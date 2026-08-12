@@ -14,12 +14,15 @@ interface RecoverySectionProps {
   completions: Completion[];
 }
 
+// A five-point DIVERGING scale, not five categories: two hues meeting at a
+// neutral middle. The previous red-orange-yellow-lime-green rainbow implied
+// five unrelated things rather than one ordered axis.
 const MOOD_COLORS: { [mood: number]: string } = {
-  1: 'bg-red-500',
-  2: 'bg-orange-500',
-  3: 'bg-yellow-500',
-  4: 'bg-lime-500',
-  5: 'bg-green-500',
+  1: 'bg-mood-worst',
+  2: 'bg-mood-bad',
+  3: 'bg-mood-mid',
+  4: 'bg-mood-good',
+  5: 'bg-mood-best',
 };
 
 const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -38,7 +41,7 @@ const MoodTrendChart: React.FC<{ dayNotes: { [dateKey: string]: DayNote }; relap
   const hasMoodData = days.some(day => dayNotes[formatISO(day, { representation: 'date' })]?.mood);
   if (!hasMoodData) {
     return (
-      <p className="text-sm text-[#b0a08f] text-center p-4">
+      <p className="text-sm text-ink-dim text-center p-4">
         Log a mood in Calendar to see this.
       </p>
     );
@@ -62,16 +65,16 @@ const MoodTrendChart: React.FC<{ dayNotes: { [dateKey: string]: DayNote }; relap
             >
               {mood
                 ? <div className={`w-full ${MOOD_COLORS[mood]}`} style={{ height: `${(mood / 5) * 100}%` }} />
-                : <div className="w-full h-[2px] bg-[#6a5340]" />}
-              <div className={`w-full h-1.5 mt-[2px] ${hadRelapse ? 'bg-red-600' : 'bg-transparent'}`} />
+                : <div className="w-full h-[2px] bg-raised" />}
+              <div className={`w-full h-1.5 mt-[2px] ${hadRelapse ? 'bg-danger-hi' : 'bg-transparent'}`} />
             </div>
           );
         })}
       </div>
-      <div className="flex justify-between text-[10px] text-[#b0a08f] mt-1">
+      <div className="flex justify-between text-[10px] text-ink-dim mt-1">
         <span>{format(days[0], 'MMM d')}</span>
-        <span className="flex items-center gap-1 text-red-400">
-          <span className="inline-block w-2 h-2 bg-red-600" /> relapse
+        <span className="flex items-center gap-1 text-danger-hi">
+          <span className="inline-block w-2 h-2 bg-danger-hi" /> relapse
         </span>
         <span>Today</span>
       </div>
@@ -100,18 +103,18 @@ const RecoverySection: React.FC<RecoverySectionProps> = ({ quits, dayNotes, habi
       </div>
 
       {record && (
-        <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515] mb-6">
+        <div className="bg-surface border-4 border-frame p-4 shadow-hard mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <ShieldIcon className="w-5 h-5 text-[#f5b342] shrink-0" />
-            <h4 className="text-lg text-white">Battle Record</h4>
+            <ShieldIcon className="w-5 h-5 text-accent shrink-0" />
+            <h4 className="text-lg text-ink-hi">Battle Record</h4>
           </div>
           <div className="flex items-center gap-4">
-            <p className="text-3xl font-bold text-[#f5b342] shrink-0">{Math.round(record.winRate * 100)}%</p>
+            <p className="text-3xl font-bold text-accent shrink-0">{Math.round(record.winRate * 100)}%</p>
             <div className="flex-1 min-w-0">
-              <div className="h-4 bg-[#2c2121] border-2 border-[#1a1515] flex">
-                <div className="bg-[#3b9b73] h-full" style={{ width: `${record.winRate * 100}%` }} />
+              <div className="h-4 bg-inset border-2 border-shadowc flex">
+                <div className="bg-good-soft h-full" style={{ width: `${record.winRate * 100}%` }} />
               </div>
-              <p className="text-[10px] text-[#b0a08f] mt-1">
+              <p className="text-[10px] text-ink-dim mt-1">
                 {/* The old tail read "most battles, you win" unconditionally,
                     which becomes a lie below a 50% rate. The number says it. */}
                 {record.urgesResisted} urges beaten · {record.relapses} slip{record.relapses === 1 ? '' : 's'}
@@ -121,18 +124,18 @@ const RecoverySection: React.FC<RecoverySectionProps> = ({ quits, dayNotes, habi
         </div>
       )}
 
-      <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515] mb-6">
-        <h4 className="text-lg text-white mb-3">Mood — Last 30 Days</h4>
+      <div className="bg-surface border-4 border-frame p-4 shadow-hard mb-6">
+        <h4 className="text-lg text-ink-hi mb-3">Mood — Last 30 Days</h4>
         <MoodTrendChart dayNotes={dayNotes} relapseDayKeys={relapseDayKeys} />
       </div>
 
       {moodLink && (
-        <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515] mb-6">
+        <div className="bg-surface border-4 border-frame p-4 shadow-hard mb-6">
           <div className="flex items-center gap-2 mb-1">
-            <HeartIcon className="w-5 h-5 text-[#f5b342] shrink-0" />
-            <h4 className="text-lg text-white">Mood × Discipline</h4>
+            <HeartIcon className="w-5 h-5 text-accent shrink-0" />
+            <h4 className="text-lg text-ink-hi">Mood × Discipline</h4>
           </div>
-          <p className="text-[10px] text-[#b0a08f] mb-3">Avg mood by day type · 90 days</p>
+          <p className="text-[10px] text-ink-dim mb-3">Avg mood by day type · 90 days</p>
           <div className="space-y-2">
             {[
               { label: `50%+ done (${moodLink.activeDays})`, value: moodLink.activeAvg },
@@ -140,17 +143,17 @@ const RecoverySection: React.FC<RecoverySectionProps> = ({ quits, dayNotes, habi
             ].map(row => (
               <div key={row.label}>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-[#f0e9d6]">{row.label}</span>
-                  <span className="text-amber-300">{row.value}/5</span>
+                  <span className="text-ink">{row.label}</span>
+                  <span className="text-warn">{row.value}/5</span>
                 </div>
-                <div className="w-full h-3 bg-[#2c2121] border-2 border-[#1a1515]">
-                  <div className="h-full bg-[#f5b342]" style={{ width: `${(row.value / 5) * 100}%` }} />
+                <div className="w-full h-3 bg-inset border-2 border-shadowc">
+                  <div className="h-full bg-accent" style={{ width: `${(row.value / 5) * 100}%` }} />
                 </div>
               </div>
             ))}
           </div>
           {moodLink.activeAvg > moodLink.quietAvg && (
-            <p className="text-xs text-amber-300 mt-3">
+            <p className="text-xs text-warn mt-3">
               Mood is higher on habit days.
             </p>
           )}
@@ -158,23 +161,23 @@ const RecoverySection: React.FC<RecoverySectionProps> = ({ quits, dayNotes, habi
       )}
 
       {(triggers.length > 0 || riskyDay !== null) && (
-        <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515]">
-          <h4 className="text-lg text-white mb-3">Know Your Enemy</h4>
+        <div className="bg-surface border-4 border-frame p-4 shadow-hard">
+          <h4 className="text-lg text-ink-hi mb-3">Know Your Enemy</h4>
           {triggers.length > 0 && (
             <div className="mb-3">
-              <p className="text-xs text-[#b0a08f] uppercase mb-2">Top triggers</p>
+              <p className="text-xs text-ink-dim uppercase mb-2">Top triggers</p>
               <div className="space-y-1">
                 {triggers.map(t => (
                   <div key={t.trigger} className="flex justify-between text-sm">
-                    <span className="text-[#f0e9d6]">⚡ {t.trigger}</span>
-                    <span className="text-amber-300">{t.count}×</span>
+                    <span className="text-ink">⚡ {t.trigger}</span>
+                    <span className="text-warn">{t.count}×</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
           {riskyDay !== null && (
-            <p className="text-sm text-amber-300">
+            <p className="text-sm text-warn">
               📅 Your riskiest day is <span className="font-bold">{WEEKDAY_NAMES[riskyDay]}</span> — plan something for it.
             </p>
           )}
