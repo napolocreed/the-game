@@ -47,12 +47,14 @@ const DailyProgressBanner: React.FC<DailyProgressBannerProps> = ({ habits, compl
   const isToday = isSameDay(viewingDate, new Date());
   const pct = Math.round((day.done / day.total) * 100);
 
+  // State, not coaching. The old copy also claimed you were "ahead of
+  // yesterday's you" — nothing here looks at yesterday, so it was flattery
+  // dressed as a fact, on the most-visited screen in the app.
   const message = (): string => {
-    if (day.done === day.total) return 'Perfect day. Every promise kept.';
-    if (day.pending === 0) return 'Day logged. Tomorrow is a fresh board.';
-    if (day.done === 0) return isToday ? 'Nothing logged yet. Start with the easiest one.' : 'Nothing was logged this day.';
-    if (day.pending === 1) return isToday ? 'One left. Finish it.' : 'One was left unlogged.';
-    return isToday ? `${day.pending} left — you're already ahead of yesterday's you.` : `${day.pending} were left unlogged.`;
+    if (day.done === day.total) return 'Perfect day.';
+    if (day.pending === 0) return 'Day logged.';
+    if (day.done === 0) return isToday ? 'Nothing logged yet.' : 'Nothing logged.';
+    return isToday ? `${day.pending} left.` : `${day.pending} unlogged.`;
   };
 
   const segmentColor = (status: CompletionStatus | null): string => {
@@ -66,7 +68,7 @@ const DailyProgressBanner: React.FC<DailyProgressBannerProps> = ({ habits, compl
     <div className="mt-4 bg-[#4a3f36] border-4 border-[#8a6a4f] p-3 shadow-[8px_8px_0px_#1a1515]">
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-xs text-[#b0a08f] uppercase tracking-wider truncate">
-          {isToday ? "Today's Board" : format(viewingDate, 'MMM d')}
+          {isToday ? 'Today' : format(viewingDate, 'MMM d')}
         </p>
         <p className="text-sm text-white whitespace-nowrap shrink-0">
           <span className="text-[#f5b342]">{day.done}</span>/{day.total} · {pct}%

@@ -27,10 +27,13 @@ const QuestItem: React.FC<QuestItemProps> = ({ quest }) => {
         <div className={`mt-1 flex-shrink-0 ${isCompleted ? 'text-green-400' : 'text-yellow-400'}`}>
           <QuestIcon className="w-8 h-8" />
         </div>
-        <div className="flex-grow">
-          <div className="flex justify-between items-baseline">
-            <h3 className={`text-lg ${isCompleted ? 'line-through text-gray-400' : 'text-white'}`}>{quest.title}</h3>
-            <span className="font-bold text-purple-300 whitespace-nowrap">+{quest.xpReward} XP</span>
+        {/* min-w-0 on both the column and the title: a flex item defaults to
+            min-width:auto, so a long quest name refuses to shrink and shoves
+            the XP badge clean off the card. */}
+        <div className="flex-grow min-w-0">
+          <div className="flex justify-between items-baseline gap-2">
+            <h3 className={`text-lg min-w-0 break-words ${isCompleted ? 'line-through text-gray-400' : 'text-white'}`}>{quest.title}</h3>
+            <span className="font-bold text-purple-300 whitespace-nowrap shrink-0">+{quest.xpReward} XP</span>
           </div>
           <p className="text-sm text-[#b0a08f] mt-1">{quest.description}</p>
           {!isCompleted && (

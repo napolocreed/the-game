@@ -12,7 +12,7 @@ const UpdateNotification: React.FC<UpdateNotificationProps> = ({ onUpdate }) => 
       <div className="bg-[#4a3f36] border-4 border-[#f5b342] shadow-[8px_8px_0px_#1a1515] p-4 flex items-center gap-4">
         <div>
           <h3 className="text-white text-lg">Update Available!</h3>
-          <p className="text-sm text-[#b0a08f]">A new version of the game is ready.</p>
+          <p className="text-sm text-[#b0a08f]"></p>
         </div>
         <PixelatedButton 
             onClick={onUpdate} 

@@ -31,13 +31,12 @@ const RestoreConflictModal: React.FC<RestoreConflictModalProps> = ({
         <div className="text-white my-6 space-y-2">
             <p>You are restoring an archived habit: <span className="font-bold text-yellow-300">"{originalHabitName}"</span>.</p>
             <p>However, an active copy named <span className="font-bold text-yellow-300">"{duplicateHabitName}"</span> already exists.</p>
-            <p className="mt-4">How would you like to proceed?</p>
         </div>
 
         <div className="space-y-4">
             <div className="bg-[#2c2121] border-2 border-[#8a6a4f] p-4">
                 <h3 className="text-lg text-white">Restore and Replace</h3>
-                <p className="text-sm text-[#b0a08f] my-2">The original habit and its history will be restored. The active copy and its progress will be <span className="font-bold text-red-400">permanently deleted</span>.</p>
+                <p className="text-sm text-[#b0a08f] my-2">The active copy and its progress are <span className="font-bold text-red-400">permanently deleted</span>.</p>
                 <PixelatedButton onClick={onReplace} className="bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]">
                     Replace Copy
                 </PixelatedButton>
@@ -45,7 +44,7 @@ const RestoreConflictModal: React.FC<RestoreConflictModalProps> = ({
             
             <div className="bg-[#2c2121] border-2 border-[#8a6a4f] p-4">
                 <h3 className="text-lg text-white">Restore and Keep Both</h3>
-                <p className="text-sm text-[#b0a08f] my-2">The original habit will be restored. You will have two separate versions of this habit in your list.</p>
+                <p className="text-sm text-[#b0a08f] my-2">Both versions stay in your list.</p>
                 <PixelatedButton onClick={onKeepBoth} className="bg-blue-800 hover:bg-blue-700 border-blue-900 shadow-[4px_4px_0px_#1e3a8a]">
                     Keep Both Habits
                 </PixelatedButton>

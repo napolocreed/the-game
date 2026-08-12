@@ -25,6 +25,8 @@ const CompletionHeatmap: React.FC<CompletionHeatmapProps> = ({ completions }) =>
     const el = containerRef.current;
     if (!el) return;
     const measure = () => {
+      // Measure the grid row itself: clientWidth on the card would still
+      // include its p-4 padding and overshoot by two cells.
       const available = el.clientWidth - LABEL_W - GAP;
       const fits = Math.floor((available + GAP) / (CELL + GAP));
       setWeeks(Math.max(MIN_WEEKS, Math.min(MAX_WEEKS, fits)));
@@ -71,11 +73,11 @@ const CompletionHeatmap: React.FC<CompletionHeatmapProps> = ({ completions }) =>
   const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div ref={containerRef} className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515]">
+    <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515]">
       <p className="text-[10px] text-[#b0a08f] mb-2">
         {format(firstDay, 'MMM d')} - today · {weeks} weeks
       </p>
-      <div className="flex gap-1">
+      <div ref={containerRef} className="flex gap-1">
         <div className="flex flex-col shrink-0 text-xs text-[#b0a08f]" style={{ width: LABEL_W }}>
           {dayLabels.map((day, i) => (
             <div

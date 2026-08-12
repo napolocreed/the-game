@@ -98,7 +98,7 @@ const DayDetailModal: React.FC<DayDetailModalProps> = ({ isOpen, onClose, date, 
                     ))}
                  </ul>
             ) : (
-                <p className="text-center text-[#b0a08f] p-4">No habits were scheduled for this day.</p>
+                <p className="text-center text-[#b0a08f] p-4">Nothing scheduled.</p>
             )}
 
             <div className="mt-5 pt-4 border-t-2 border-[#6a5340]">
@@ -120,7 +120,7 @@ const DayDetailModal: React.FC<DayDetailModalProps> = ({ isOpen, onClose, date, 
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     rows={3}
-                    placeholder="How did this day go? Triggers, wins, thoughts..."
+                    placeholder="Triggers, wins, thoughts..."
                     className="w-full p-2 bg-[#2c2121] border-2 border-[#8a6a4f] focus:outline-none focus:border-[#f5b342] text-sm placeholder:text-[#6a5340]"
                 />
                 <div className="flex justify-end items-center gap-3 mt-2">

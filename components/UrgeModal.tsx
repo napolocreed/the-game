@@ -60,13 +60,12 @@ const UrgeModal: React.FC<UrgeModalProps> = ({ isOpen, quit, onClose, onResisted
           <>
             <h2 className="text-xl text-[#f5b342] mb-2">🌊 Ride the Wave</h2>
             <p className="text-xs text-[#b0a08f] leading-relaxed mb-4">
-              An urge is a wave: it rises, peaks, and always passes.
-              You don't have to fight it — just don't feed it. Breathe with the box.
+              Urges rise, peak, and pass. Breathe with the box.
             </p>
 
             {quit.motivation && (
               <div className="bg-[#2c2121] border-l-4 border-[#f5b342] p-3 mb-4 text-left">
-                <p className="text-[10px] text-[#b0a08f] uppercase mb-1">Remember why you started:</p>
+                <p className="text-[10px] text-[#b0a08f] uppercase mb-1">Why you started:</p>
                 <p className="text-sm text-[#f5b342] italic">"{quit.motivation}"</p>
               </div>
             )}
@@ -105,12 +104,12 @@ const UrgeModal: React.FC<UrgeModalProps> = ({ isOpen, quit, onClose, onResisted
             <p className="text-xs text-[#b0a08f] mb-4">
               {xpGained > 0
                 ? 'Every urge you resist makes the next one weaker.'
-                : "XP cap reached for today — but this one still counts, and it's the ones no reward sees that matter most."}
+                : "XP capped today — it still counts."}
             </p>
             {xpGained > 0 && <p className="text-3xl text-[#f5b342] mb-4">+{xpGained} XP</p>}
 
             <div className="mb-5">
-              <p className="text-xs text-[#b0a08f] uppercase mb-2">What triggered it? (optional — helps you spot patterns)</p>
+              <p className="text-xs text-[#b0a08f] uppercase mb-2">What triggered it? (optional)</p>
               <div className="flex flex-wrap justify-center gap-2">
                 {TRIGGER_OPTIONS.map(trigger => (
                   <button

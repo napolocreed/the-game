@@ -54,7 +54,6 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
 
   return (
     <div>
-      <h2 className="text-2xl md:text-3xl text-[#f5b342] mb-4">Your Progress</h2>
 
       {/* Sub-navigation: the old single page had become a long scroll; four
           focused screens keep each question one tap away. */}
@@ -92,10 +91,7 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
           <ConsistencyChart habits={habits} completions={completions} />
           <AnalyticsInsights completions={completions} habits={habits} />
 
-          <div>
-            <h3 className="text-xl text-white mb-4">Completion History</h3>
-            <CompletionHeatmap completions={completions} />
-          </div>
+          <CompletionHeatmap completions={completions} />
 
           <WeeklyActivityChart completions={completions} />
           <CategoryDistributionChart completions={completions} />
@@ -105,13 +101,12 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
       {tab === 'habits' && (
         <div>
           {activeHabitStats.length === 0 ? (
-            <p className="text-[#b0a08f] text-center p-8">Create some habits to see their stats here!</p>
+            <p className="text-[#b0a08f] text-center p-8">No habits yet.</p>
           ) : (
             <>
               {/* Swatches are drawn, not typed: the pixel font has no block
                   characters, so a "▮" would silently fall back to a smooth one. */}
               <p className="text-[10px] text-[#b0a08f] mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span>Last 30 days per habit</span>
                 <span className="flex items-center gap-1">
                   <span className="inline-block w-2 h-3 bg-[#3b9b73]" /> done
                 </span>
@@ -140,17 +135,14 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
           <RecoverySection quits={quits} dayNotes={dayNotes} habits={habits} completions={completions} />
         ) : (
           <p className="text-[#b0a08f] text-center p-8">
-            Start a Boss Fight in the ⚔️ Battles tab, or log your mood in the Calendar, to unlock recovery analytics.
+            Start a Boss Fight or log a mood to unlock this.
           </p>
         )
       )}
 
       {tab === 'awards' && (
         <div>
-          <div className="flex items-baseline justify-between mb-4">
-            <h3 className="text-xl text-white">Achievements</h3>
-            <span className="text-xs text-[#f5b342]">{unlockedTiers}/{totalTiers} tiers</span>
-          </div>
+          <p className="text-xs text-[#f5b342] mb-4">{unlockedTiers}/{totalTiers} tiers</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {BADGE_CATALOG.map(badge => (
               <BadgeItem

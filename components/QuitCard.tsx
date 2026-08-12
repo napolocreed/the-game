@@ -41,8 +41,7 @@ const QuitCard: React.FC<QuitCardProps> = ({ quit, onResistUrge, onRelapse, onAr
   return (
     <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] shadow-[8px_8px_0px_#1a1515] p-4 sm:p-6">
       <div className="flex justify-between items-start gap-2">
-        <div>
-          <p className="text-xs text-red-400 uppercase">Boss Fight</p>
+        <div className="min-w-0">
           <h3 className="text-xl sm:text-2xl text-[#f5b342] mt-1 break-words">{quit.name}</h3>
         </div>
         <div className="flex gap-1 shrink-0">
@@ -74,7 +73,7 @@ const QuitCard: React.FC<QuitCardProps> = ({ quit, onResistUrge, onRelapse, onAr
           <ProgressBar
             value={Math.max(0, days - prevMilestone)}
             max={next.days - prevMilestone}
-            label={`Next milestone: ${next.label} (+${next.xp} XP)`}
+            label={`${next.label} · +${next.xp} XP`}
           />
         </div>
       )}
@@ -94,7 +93,7 @@ const QuitCard: React.FC<QuitCardProps> = ({ quit, onResistUrge, onRelapse, onAr
         <div className="bg-[#2c2121] border-2 border-[#6a5340] p-3 mb-4">
           {goalReached ? (
             <p className="text-sm text-center text-[#f5b342]">
-              🎁 <span className="font-bold">{goal.name}</span> is paid for! Treat yourself — you've earned it.
+              🎁 <span className="font-bold">{goal.name}</span> — paid for!
             </p>
           ) : (
             <>
@@ -138,7 +137,7 @@ const QuitCard: React.FC<QuitCardProps> = ({ quit, onResistUrge, onRelapse, onAr
             <div className="mt-3 space-y-2">
               {quitTriggers.length > 0 && (
                 <p className="text-xs text-amber-300">
-                  ⚡ Your #1 trigger: <span className="font-bold">{quitTriggers[0].trigger}</span> ({quitTriggers[0].count}×) — plan for it.
+                  ⚡ #1 trigger: <span className="font-bold">{quitTriggers[0].trigger}</span> ({quitTriggers[0].count}×)
                 </p>
               )}
               {quit.relapses.length > 0 && (

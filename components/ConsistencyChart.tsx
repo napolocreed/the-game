@@ -37,7 +37,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ habits, completions
         <TrendUpIcon className="w-5 h-5 text-[#f5b342] shrink-0" />
         <h3 className="text-xl text-white">Consistency</h3>
       </div>
-      <p className="text-[10px] text-[#b0a08f] mb-4">% of scheduled habits completed, last {WEEKS} weeks</p>
+      <p className="text-[10px] text-[#b0a08f] mb-4">% completed · {WEEKS} weeks</p>
       <div className="h-36 flex items-end gap-[3px]">
         {weeks.map((w, i) => {
           const pct = w.rate !== null ? Math.round(w.rate * 100) : null;

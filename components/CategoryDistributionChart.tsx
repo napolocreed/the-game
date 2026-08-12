@@ -21,7 +21,7 @@ const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = ({ c
 
   return (
     <div className="bg-[#4a3f36] border-4 border-[#8a6a4f] p-4 shadow-[8px_8px_0px_#1a1515]">
-      <h3 className="text-xl text-white mb-4">Habit Category Focus</h3>
+      <h3 className="text-xl text-white mb-4">Category Focus</h3>
       <div className="space-y-3">
         {sortedCategories.length > 0 ? sortedCategories.map(category => {
           const count = categoryCounts[category] ?? 0;
@@ -40,7 +40,7 @@ const CategoryDistributionChart: React.FC<CategoryDistributionChartProps> = ({ c
               </div>
             </div>
           );
-        }) : <p className="text-[#b0a08f]">Complete some habits to see your focus areas!</p>}
+        }) : <p className="text-[#b0a08f]">No wins logged yet.</p>}
       </div>
     </div>
   );

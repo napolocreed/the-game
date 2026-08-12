@@ -17,7 +17,7 @@ const QuestBoard: React.FC<QuestBoardProps> = ({ quests, habits }) => {
       return (
         <div className="text-center border-4 border-dashed border-[#6a5340] p-10 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
           <p className="text-xl text-[#f0e9d6]">Your Quest Log is Empty</p>
-          <p className="mt-2 text-[#b0a08f]">Create your first habit to start receiving daily quests!</p>
+          <p className="mt-2 text-[#b0a08f]">Add a habit to unlock quests.</p>
         </div>
       );
     }
@@ -41,7 +41,7 @@ const QuestBoard: React.FC<QuestBoardProps> = ({ quests, habits }) => {
     if (nextQuestTier) {
         return (
             <div className="text-center border-4 border-dashed border-[#6a5340] p-10 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
-                <p className="text-xl text-[#f0e9d6]">Unlock More Powerful Quests</p>
+                <p className="text-xl text-[#f0e9d6]">Unlock More Quests</p>
                 <p className="mt-2 mb-6 text-[#b0a08f]">Your journey is just beginning! Add more habits to unlock new challenges and earn greater rewards.</p>
                 <div className="w-full max-w-sm mx-auto">
                     <ProgressBar 
@@ -56,7 +56,7 @@ const QuestBoard: React.FC<QuestBoardProps> = ({ quests, habits }) => {
 
     return (
       <div className="text-center border-4 border-dashed border-[#6a5340] p-10 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515]">
-        <p className="text-lg text-[#b0a08f]">No new quests available right now. Check back tomorrow for new adventures!</p>
+        <p className="text-lg text-[#b0a08f]">No quests today. Check back tomorrow.</p>
       </div>
     );
   };

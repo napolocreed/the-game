@@ -162,7 +162,7 @@ const App: React.FC = () => {
             />
              { !isToday && !isViewingDateEditable && (
               <div className="text-center p-2 bg-yellow-900 border-y-2 border-yellow-700 text-yellow-200 text-sm mt-4">
-                Viewing a past day. Logging is disabled (48-hour limit).
+                Past day — logging locked (48h limit).
               </div>
             )}
             <div className="mt-6">
@@ -189,8 +189,8 @@ const App: React.FC = () => {
         if (!isViewingToday) {
             return (
                 <div className="text-center border-4 border-dashed border-[#6a5340] p-10 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515] mt-8">
-                    <p className="text-xl text-[#f0e9d6]">Quests are only available for today.</p>
-                    <p className="mt-2 text-[#b0a08f]">Navigate back to the current day to see your active quests.</p>
+                    <p className="text-xl text-[#f0e9d6]">Quests are today only.</p>
+                    <p className="mt-2 text-[#b0a08f]">Go back to today.</p>
                 </div>
             );
         }
@@ -225,8 +225,8 @@ const App: React.FC = () => {
         confirmClass: "bg-orange-700 hover:bg-orange-600 border-orange-800 shadow-[4px_4px_0px_#7c2d12]",
         content: (
           <>
-            <p>Are you sure you want to archive "{habit.name}"?</p>
-            <p className="text-sm text-yellow-300 mt-2">It will be hidden from your daily list but its history will be saved.</p>
+            <p>Archive "{habit.name}"?</p>
+            <p className="text-sm text-yellow-300 mt-2">Hidden from your list. History kept.</p>
           </>
         )
       };
@@ -238,7 +238,7 @@ const App: React.FC = () => {
         confirmClass: "bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]",
         content: (
           <>
-            <p>Are you sure you want to permanently delete "{habit.name}"?</p>
+            <p>Delete "{habit.name}" forever?</p>
             <p className="text-sm text-red-400 mt-2">This action cannot be undone.</p>
           </>
         )
@@ -317,8 +317,7 @@ const App: React.FC = () => {
                 confirmText="Restore & Overwrite"
                 confirmClass="bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]"
             >
-                <p>Are you sure you want to restore from this backup?</p>
-                <p className="text-sm text-red-400 mt-2">This will permanently overwrite all your current data. This action cannot be undone.</p>
+                <p className="text-sm text-red-400 mt-2">Overwrites all current data. Cannot be undone.</p>
             </ConfirmModal>
        )}
        {recoveryData && (
@@ -391,7 +390,7 @@ const App: React.FC = () => {
                 confirmClass="bg-red-800 hover:bg-red-700 border-red-900 shadow-[4px_4px_0px_#450a0a]"
            >
                 <p>Permanently delete "{quitToDelete.name}" and all its history?</p>
-                <p className="text-sm text-red-400 mt-2">This cannot be undone. If you just want a break, pause it instead.</p>
+                <p className="text-sm text-red-400 mt-2">Cannot be undone. Pause it instead?</p>
            </ConfirmModal>
        )}
        {showUpdateNotification && <UpdateNotification onUpdate={handleUpdate} />}

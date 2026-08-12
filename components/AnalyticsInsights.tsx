@@ -64,7 +64,7 @@ const AnalyticsInsights: React.FC<AnalyticsInsightsProps> = ({ completions, habi
       </div>
       <div className="flex flex-wrap gap-3">
         <InsightCard
-          title="Most Productive Day"
+          title="Top Weekday"
           value={insights.productiveDayIdx !== null ? <WeekdayValue dayIndex={insights.productiveDayIdx} /> : 'N/A'}
         />
         {insights.goldenHour && <InsightCard title="Golden Hour" value={insights.goldenHour} />}
