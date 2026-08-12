@@ -88,12 +88,24 @@ export interface BadgeTier {
     xpReward: number;
 }
 
+/** Everything a badge may measure. A named context rather than a positional
+ *  list: the fifth positional argument is where a wrong-order call silently
+ *  reads one entity as another, and this codebase has no test suite to catch
+ *  it — the compiler is the only gate, so give it something to check. */
+export interface BadgeContext {
+    profile: PlayerProfile;
+    habits: Habit[];
+    completions: Completion[];
+    quits: Quit[];
+    tasks: Task[];
+}
+
 export interface Badge {
     id: string; // e.g., 'streak-master'
     baseName: string; // "Streak Master"
     icon: React.FC<React.SVGProps<SVGSVGElement>>;
     tiers: BadgeTier[];
-    getProgress: (profile: PlayerProfile, habits: Habit[], completions: Completion[], quits?: Quit[]) => number;
+    getProgress: (ctx: BadgeContext) => number;
 }
 
 
@@ -134,6 +146,46 @@ export interface Quit {
   savingsGoal?: SavingsGoal | null; // optional concrete reward the savings go toward
   milestonesAwarded: number[]; // milestone day-counts already rewarded for the current streak
   isArchived?: boolean;
+}
+
+// --- One-shot tasks ---
+// The third failure mode. A Habit fails by breaking its chain; a Quit fails by
+// relapsing; a Task fails by never being started. Streaks and completion rate
+// say nothing about it, because there is no schedule and therefore no
+// denominator. The only signal a never-started task emits is its AGE.
+//
+// Everything downstream is derived from three immutable timestamps, so the
+// exact open set at any past date can be recomputed rather than remembered.
+// Two rules make that hold, and both are load-bearing:
+//   1. createdAt is never editable — it is the clock.
+//   2. Un-completing clears completedAt but never touches createdAt, so
+//      complete-then-reopen cannot be used as an age reset.
+
+export enum TaskSize {
+  QUICK = 'quick',   // under ~15 minutes
+  MEDIUM = 'medium', // an hour-ish
+  BIG = 'big',       // an afternoon, or needs breaking down
+}
+
+export interface Task {
+  id: string;
+  name: string;
+  category: HabitCategory; // reuses the habit vocabulary, so tasks feed the same category stats
+  size: TaskSize;
+  /** ISO. THE CLOCK. May be backdated AT CREATION ONLY — "how long have you
+   *  been putting this off?" — following the Quit backdating precedent. That
+   *  avoidance is real, and starting every task at 0d would make the whole
+   *  feature inert for its first month. Never editable afterwards. */
+  createdAt: string;
+  completedAt: string | null;
+  droppedAt: string | null; // explicit "I am not doing this" — a decision, not a failure
+  /** Real deadlines only (an appointment, an administrative cutoff). Never
+   *  invented, never suggested: a fake due date teaches you to ignore red. */
+  dueDate?: string | null;
+  /** Day keys on which the daily pick was declined. Length is the push count. */
+  pushedOn: string[];
+  xpGained?: number; // recorded at completion so undo can refund exactly
+  note?: string;
 }
 
 export interface DayNote {

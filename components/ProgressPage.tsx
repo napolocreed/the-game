@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Habit, Completion, CompletionStatus, PlayerProfile, Quit, DayNote } from '../types';
+import { Habit, Completion, CompletionStatus, PlayerProfile, Quit, DayNote, Task } from '../types';
 import StatCard from './StatCard';
 import WeeklyActivityChart from './WeeklyActivityChart';
 import CategoryDistributionChart from './CategoryDistributionChart';
@@ -10,6 +10,7 @@ import AnalyticsInsights from './AnalyticsInsights';
 import RecoverySection from './RecoverySection';
 import ConsistencyChart from './ConsistencyChart';
 import HabitStatsCard from './HabitStatsCard';
+import TaskStats from './TaskStats';
 import { habitStats, personalRecords } from '../utils/analytics';
 import { format } from 'date-fns';
 import { CheckIcon } from './icons/CheckIcon';
@@ -23,18 +24,20 @@ interface ProgressPageProps {
   profile: PlayerProfile;
   quits: Quit[];
   dayNotes: { [dateKey: string]: DayNote };
+  tasks: Task[];
 }
 
-type StatsTab = 'overview' | 'habits' | 'recovery' | 'awards';
+type StatsTab = 'overview' | 'habits' | 'quests' | 'recovery' | 'awards';
 
-const SUB_TABS: { id: StatsTab; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'habits', label: 'Habits' },
-  { id: 'recovery', label: 'Recovery' },
-  { id: 'awards', label: 'Awards' },
+const SUB_TABS: { id: StatsTab; label: string; short: string }[] = [
+  { id: 'overview', label: 'Overview', short: 'All' },
+  { id: 'habits', label: 'Habits', short: 'Habits' },
+  { id: 'quests', label: 'Quests', short: 'Quests' },
+  { id: 'recovery', label: 'Recovery', short: 'Boss' },
+  { id: 'awards', label: 'Awards', short: 'Awards' },
 ];
 
-const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profile, quits, dayNotes }) => {
+const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profile, quits, dayNotes, tasks }) => {
   const [tab, setTab] = useState<StatsTab>('overview');
 
   const totalCompletions = completions.filter(c => c.status === CompletionStatus.COMPLETED).length;
@@ -64,11 +67,15 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
             <button
               role="tab"
               aria-selected={tab === t.id}
+              // The visible label shortens on narrow phones; the accessible
+              // name must not, or the section becomes "All" to a screen reader.
+              aria-label={t.label}
               onClick={() => setTab(t.id)}
               className={`flex-1 min-w-0 px-1 py-2 text-[9px] sm:text-xs truncate transition-colors
                 ${tab === t.id ? 'bg-[#8a6a4f] text-white' : 'bg-[#2c2121] text-[#b0a08f] hover:bg-[#4a3f36]'}`}
             >
-              {t.label}
+              <span className="pm:hidden block truncate">{t.short}</span>
+              <span className="hidden pm:block truncate">{t.label}</span>
             </button>
           </React.Fragment>
         ))}
@@ -130,6 +137,8 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
         </div>
       )}
 
+      {tab === 'quests' && <TaskStats tasks={tasks} />}
+
       {tab === 'recovery' && (
         quits.length > 0 || Object.keys(dayNotes).length > 0 ? (
           <RecoverySection quits={quits} dayNotes={dayNotes} habits={habits} completions={completions} />
@@ -153,6 +162,7 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
                 habits={habits}
                 completions={completions}
                 quits={quits}
+                tasks={tasks}
               />
             ))}
           </div>

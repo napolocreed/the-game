@@ -17,11 +17,13 @@ import RestoreConflictModal from './components/RestoreConflictModal';
 import QuitBoard from './components/QuitBoard';
 import QuitChips from './components/QuitChips';
 import DailyProgressBanner from './components/DailyProgressBanner';
+import TodaysTaskCard from './components/TodaysTaskCard';
+import AddTaskModal from './components/AddTaskModal';
 import AddQuitModal from './components/AddQuitModal';
 import UrgeModal from './components/UrgeModal';
 import RelapseModal from './components/RelapseModal';
 import MilestoneModal from './components/MilestoneModal';
-import { Habit, Quit } from './types';
+import { Habit, Quit, Task } from './types';
 import * as serviceWorkerRegistration from './utils/serviceWorkerRegistration';
 import UpdateNotification from './components/UpdateNotification';
 
@@ -60,6 +62,15 @@ const App: React.FC = () => {
     quests,
     quits,
     dayNotes,
+    tasks,
+    dailyTask,
+    handleAddTask,
+    handleEditTask,
+    handleCompleteTask,
+    handlePushTask,
+    handleDropTask,
+    handleReopenTask,
+    handleDeleteTask,
     handleAddQuit,
     handleResistUrge,
     handleTagLastUrge,
@@ -129,6 +140,24 @@ const App: React.FC = () => {
   const [isAddQuitModalOpen, setIsAddQuitModalOpen] = useState(false);
   const [urgeQuit, setUrgeQuit] = useState<Quit | null>(null);
   const [relapseQuit, setRelapseQuit] = useState<Quit | null>(null);
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+  // The daily card's "see all" deep-links straight into the side-quest list.
+  const [questTab, setQuestTab] = useState<'today' | 'side'>('today');
+
+  // Android long-press shortcuts land here. A PWA cannot draw a home-screen
+  // widget — that manifest member is Windows-only — so the app-icon menu is
+  // the real deep-link surface on a phone.
+  useEffect(() => {
+    const go = new URLSearchParams(window.location.search).get('go');
+    if (!go) return;
+    if (go === 'habits') setActiveTab('habits');
+    if (go === 'battles') setActiveTab('battles');
+    if (go === 'sidequests') { setQuestTab('side'); setActiveTab('quests'); }
+    window.history.replaceState({}, '', window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const activeHabits = habits.filter(h => !h.isArchived);
   
@@ -182,19 +211,34 @@ const App: React.FC = () => {
                 dailyHabitLimit={profile.settings?.dailyHabitLimit ?? null}
               />
             </div>
+            {isToday && (
+              <TodaysTaskCard
+                task={dailyTask}
+                onComplete={handleCompleteTask}
+                onPush={handlePushTask}
+                onOpenBoard={() => { setQuestTab('side'); setActiveTab('quests'); }}
+                allPushedToday={tasks.some(t => !t.completedAt && !t.droppedAt)}
+              />
+            )}
           </>
         );
       case 'quests':
-        const isViewingToday = isSameDay(viewingDate, new Date());
-        if (!isViewingToday) {
-            return (
-                <div className="text-center border-4 border-dashed border-[#6a5340] p-10 bg-[#4a3f36] shadow-[8px_8px_0px_#1a1515] mt-8">
-                    <p className="text-xl text-[#f0e9d6]">Quests are today only.</p>
-                    <p className="mt-2 text-[#b0a08f]">Go back to today.</p>
-                </div>
-            );
-        }
-        return <QuestBoard quests={quests} habits={activeHabits} />;
+        return (
+          <QuestBoard
+            quests={quests}
+            habits={activeHabits}
+            tasks={tasks}
+            key={questTab}
+            initialTab={questTab}
+            isToday={isSameDay(viewingDate, new Date())}
+            onAddTask={() => { setTaskToEdit(null); setIsAddTaskModalOpen(true); }}
+            onEditTask={task => { setTaskToEdit(task); setIsAddTaskModalOpen(true); }}
+            onCompleteTask={handleCompleteTask}
+            onDropTask={handleDropTask}
+            onReopenTask={handleReopenTask}
+            onDeleteTask={handleDeleteTask}
+          />
+        );
       case 'battles':
         return (
           <QuitBoard
@@ -209,7 +253,7 @@ const App: React.FC = () => {
       case 'calendar':
         return <CalendarView habits={habits} completions={completions} dayNotes={dayNotes} quits={quits} onDayClick={handleDayClick} />;
       case 'progress':
-        return <ProgressPage habits={habits} completions={completions} profile={profile} quits={quits} dayNotes={dayNotes} />;
+        return <ProgressPage habits={habits} completions={completions} profile={profile} quits={quits} dayNotes={dayNotes} tasks={tasks} />;
       default:
         return null;
     }
@@ -355,7 +399,16 @@ const App: React.FC = () => {
         dayNote={selectedDate ? dayNotes[formatISO(selectedDate, { representation: 'date' })] : undefined}
         onSaveNote={handleSaveDayNote}
        />
-       <AddQuitModal
+       <AddTaskModal
+        isOpen={isAddTaskModalOpen}
+        editing={taskToEdit}
+        onClose={() => { setIsAddTaskModalOpen(false); setTaskToEdit(null); }}
+        onSubmit={data => {
+          if (taskToEdit) handleEditTask(taskToEdit.id, data);
+          else handleAddTask(data);
+        }}
+       />
+      <AddQuitModal
         isOpen={isAddQuitModalOpen}
         onClose={() => setIsAddQuitModalOpen(false)}
         onAddQuit={handleAddQuit}
