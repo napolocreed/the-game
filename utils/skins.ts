@@ -1,5 +1,5 @@
 import React from 'react';
-import { Skin, SkinMaterial, SkinRarity, SkinUnlock } from '../types';
+import { Skin, SkinFxLayer, SkinMaterial, SkinRarity, SkinUnlock } from '../types';
 import { CLASSIC, SkinTokens, TOKEN_KEYS, cssVar } from './theme';
 import { contrast, ensureContrast, isDark, lighten, mix, ramp, saturate } from './color';
 import { patina } from './patina';
@@ -188,7 +188,24 @@ export const applySkin = (skin: Skin | null, root: HTMLElement, stage = 0): void
   root.style.setProperty('--border-w', `${m?.borderWidth ?? 4}px`);
   root.style.setProperty('--texture', m?.texture ?? 'none');
   root.style.setProperty('--overlay', m?.overlay ?? 'none');
+  root.style.setProperty('--glow', m?.glow ?? 'none');
+  applyFxLayer(root, 'a', m?.fx?.a);
+  applyFxLayer(root, 'b', m?.fx?.b);
   root.dataset.skin = skin?.id ?? 'classic';
+};
+
+/**
+ * One animated weather layer.
+ *
+ * The layer travels exactly one tile per cycle, which is why the tile size is
+ * published as a custom property: the keyframes translate by `var(--tile)`, so
+ * the loop closes on itself and the seam is never visible.
+ */
+const applyFxLayer = (root: HTMLElement, slot: 'a' | 'b', layer?: SkinFxLayer): void => {
+  root.style.setProperty(`--fx-${slot}-img`, layer?.image ?? 'none');
+  root.style.setProperty(`--fx-${slot}-tile`, `${layer?.tile ?? 0}px`);
+  root.style.setProperty(`--fx-${slot}-dur`, `${layer?.duration ?? 0}s`);
+  root.style.setProperty(`--fx-${slot}-anim`, layer ? `fx-${layer.motion}` : 'none');
 };
 
 /** Inline style object for a preview swatch, no document mutation. */
@@ -204,5 +221,8 @@ export const previewStyle = (skin: Skin, stage = 1): React.CSSProperties => {
   style['--shadow-near'] = m?.shadowNear ?? '4px 4px 0px';
   style['--border-w'] = `${m?.borderWidth ?? 4}px`;
   style['--texture'] = m?.texture ?? 'none';
+  // A still frame of the skin's weather, so the gallery can show that this one
+  // moves without every tile having to animate.
+  style['--fx-still'] = m?.fx?.a.image ?? 'none';
   return style as React.CSSProperties;
 };

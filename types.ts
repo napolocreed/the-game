@@ -220,6 +220,34 @@ export interface SkinMaterial {
   texture?: string;
   /** Overlay drawn above everything (vignette, CRT curve). Pointer-events none. */
   overlay?: string;
+  /** Moving weather: rain, petals, embers, drifting stars. */
+  fx?: SkinFx;
+  /** A text-shadow put on accent and title text — how a skin glows. */
+  glow?: string;
+}
+
+/**
+ * One animated layer of a skin's weather.
+ *
+ * Deliberately small: a seamless tiled sprite translated by exactly its own
+ * tile size. That keeps every effect a single compositor-driven transform
+ * rather than a per-frame repaint, and keeps the loop invisible.
+ */
+export interface SkinFxLayer {
+  /** Tiled background image for the layer. */
+  image: string;
+  /** Tile size in px — also the exact distance the layer travels per cycle. */
+  tile: number;
+  /** Seconds per cycle. */
+  duration: number;
+  motion: 'fall' | 'rise' | 'sweep';
+}
+
+export interface SkinFx {
+  /** The near layer. */
+  a: SkinFxLayer;
+  /** An optional far layer, for parallax. */
+  b?: SkinFxLayer;
 }
 
 export interface Skin {

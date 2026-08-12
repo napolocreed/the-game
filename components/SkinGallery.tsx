@@ -46,7 +46,9 @@ const SkinPreview: React.FC<{ skin: Skin; locked: boolean }> = ({ skin, locked }
     style={previewStyle(skin)}
     // Locked skins are dimmed, not hidden: the thing you are working toward has
     // to be visible enough to want. Only the label says "locked".
-    className={`skin-texture bg-canvas border-2 border-frame p-1.5 ${locked ? 'opacity-70' : ''}`}
+    className={`skin-texture skin-still relative bg-canvas border-2 border-frame p-1.5 ${
+      locked ? 'opacity-70' : ''
+    }`}
     aria-hidden="true"
   >
     <div className="bg-surface border-2 border-frame p-1 shadow-hard-xs">

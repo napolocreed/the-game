@@ -1,6 +1,6 @@
 import { Skin } from '../types';
 import { buildSkin, SkinSpec } from './skins';
-import { MATERIALS } from './patina';
+import { FX, GLOW, MATERIALS } from './patina';
 import { CLASSIC } from './theme';
 
 /**
@@ -79,6 +79,7 @@ const SPECS: SkinSpec[] = [
     ink: '#f7e2da',
     good: '#4f8f5a',
     danger: '#b02a2a',
+    material: { fx: FX.embers },
   },
   {
     id: 'slate',
@@ -157,7 +158,7 @@ const SPECS: SkinSpec[] = [
     good: '#2f9a7a',
     miss: '#96622a',
     info: '#8fd8ff',
-    material: MATERIALS.glass,
+    material: { ...MATERIALS.glass, fx: FX.bubbles },
   },
   {
     id: 'sakura',
@@ -172,7 +173,7 @@ const SPECS: SkinSpec[] = [
     ink: '#f7e4ec',
     good: '#5a9a72',
     xp: '#c9a8ff',
-    material: MATERIALS.cloth,
+    material: { ...MATERIALS.cloth, fx: FX.petals },
   },
   {
     id: 'gilded',
@@ -187,7 +188,7 @@ const SPECS: SkinSpec[] = [
     ink: '#f7efd9',
     good: '#4f8f52',
     title: '#ffc94a',
-    material: MATERIALS.metal,
+    material: { ...MATERIALS.metal, fx: FX.sheen, glow: GLOW.gold },
   },
   {
     id: 'obsidian',
@@ -204,7 +205,7 @@ const SPECS: SkinSpec[] = [
     danger: '#e0344a',
     xp: '#9d7bff',
     info: '#4fd6ff',
-    material: MATERIALS.glass,
+    material: { ...MATERIALS.glass, fx: FX.roll },
   },
   {
     id: 'aurora',
@@ -222,7 +223,7 @@ const SPECS: SkinSpec[] = [
     xp: '#b48cff',
     info: '#6fe0ff',
     title: '#a8ffe0',
-    material: MATERIALS.crt,
+    material: { ...MATERIALS.crt, fx: FX.roll, glow: GLOW.mint },
   },
 
 
@@ -336,7 +337,7 @@ const SPECS: SkinSpec[] = [
     ink: '#e8f4fa',
     good: '#3f9a8f',
     miss: '#a06430',
-    material: MATERIALS.glass,
+    material: { ...MATERIALS.glass, fx: FX.snow },
   },
   {
     id: 'terracotta',
@@ -403,7 +404,7 @@ const SPECS: SkinSpec[] = [
     xp: '#a88cff',
     info: '#4fe0ff',
     title: '#ff7ad6',
-    material: MATERIALS.crt,
+    material: { ...MATERIALS.crt, fx: FX.neon, glow: GLOW.pink },
   },
   {
     id: 'blackletter',
@@ -439,7 +440,7 @@ const SPECS: SkinSpec[] = [
     good: '#5f9a45',
     danger: '#d4402a',
     title: '#ff8a1e',
-    material: MATERIALS.metal,
+    material: { ...MATERIALS.metal, fx: FX.embers, glow: GLOW.amber },
   },
   {
     id: 'nebula',
@@ -457,7 +458,7 @@ const SPECS: SkinSpec[] = [
     xp: '#8ce0ff',
     info: '#6fd8ff',
     title: '#ffb3f0',
-    material: MATERIALS.crt,
+    material: { ...MATERIALS.crt, fx: FX.stars, glow: GLOW.violet },
   },
   {
     id: 'eclipse',
@@ -473,7 +474,7 @@ const SPECS: SkinSpec[] = [
     good: '#3f9a72',
     danger: '#d4382e',
     title: '#ffdf8a',
-    material: MATERIALS.glass,
+    material: { ...MATERIALS.glass, fx: FX.stars, glow: GLOW.gold },
   },
   {
     id: 'ascendant',
@@ -490,7 +491,7 @@ const SPECS: SkinSpec[] = [
     xp: '#c9b3ff',
     info: '#8fd8ff',
     title: '#ffeeb8',
-    material: MATERIALS.metal,
+    material: { ...MATERIALS.metal, fx: FX.motes, glow: GLOW.gold },
   },
 
   // -------------------------------------------------------------- the feats
@@ -549,6 +550,7 @@ const SPECS: SkinSpec[] = [
     good: '#5f9a5a',
     danger: '#d4402e',
     title: '#ff7a3c',
+    material: { fx: FX.embers, glow: GLOW.amber },
   },
   {
     id: 'clean-slate',
@@ -610,6 +612,7 @@ const SPECS: SkinSpec[] = [
     ink: '#e2f0fa',
     good: '#3f9a8a',
     title: '#b8e8ff',
+    material: { fx: FX.stars },
   },
 
   {
@@ -625,7 +628,7 @@ const SPECS: SkinSpec[] = [
     ink: '#e2f4ec',
     good: '#2fa87a',
     title: '#a8ffd8',
-    material: MATERIALS.glass,
+    material: { ...MATERIALS.glass, glow: GLOW.mint },
   },
   {
     id: 'ironwill',
@@ -750,6 +753,7 @@ const SPECS: SkinSpec[] = [
     info: '#7fc9e8',
     title: '#ffd9a0',
     livingId: 'heirloom',
+    material: { fx: FX.motes },
   },
   {
     id: 'monument',

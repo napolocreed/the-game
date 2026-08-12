@@ -99,6 +99,99 @@ body::after {
   border-width: var(--border-w);
 }
 
+/* --- Skin weather --------------------------------------------------------
+   Rain, petals, embers, snow, drifting stars. Each layer is one seamlessly
+   tiled sprite that travels exactly its own tile size per cycle, so the loop
+   closes on itself and the seam never shows. Nothing here animates anything
+   but `transform`, which keeps the whole effect on the compositor instead of
+   repainting the page sixty times a second.
+
+   Above the interface and below the overlay, and it never takes a click. */
+.skin-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.skin-fx > span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* One tile of slack top and bottom, so the layer still covers the screen at
+     both ends of its travel. */
+  top: calc(-1 * var(--tile));
+  height: calc(100% + var(--tile) * 2);
+  background-image: var(--img);
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  animation: var(--anim) var(--dur) linear infinite;
+}
+
+/* No `will-change` on purpose: a transform animation is promoted to its own
+   compositor layer automatically while it runs, whereas the hint would hold
+   two full-screen layers in memory forever — including for the great majority
+   of skins that have no weather at all. */
+
+.skin-fx > .fx-a {
+  --img: var(--fx-a-img, none);
+  --tile: var(--fx-a-tile, 0px);
+  --dur: var(--fx-a-dur, 0s);
+  --anim: var(--fx-a-anim, none);
+}
+
+.skin-fx > .fx-b {
+  --img: var(--fx-b-img, none);
+  --tile: var(--fx-b-tile, 0px);
+  --dur: var(--fx-b-dur, 0s);
+  --anim: var(--fx-b-anim, none);
+}
+
+@keyframes fx-fall {
+  to { transform: translateY(var(--tile)); }
+}
+
+@keyframes fx-rise {
+  to { transform: translateY(calc(-1 * var(--tile))); }
+}
+
+/* A band of light crossing the whole surface and leaving again — the pause
+   between passes is most of the cycle, which is what makes it read as a
+   glint rather than a strobe. */
+@keyframes fx-sweep {
+  from { transform: translateX(-130%); }
+  to { transform: translateX(130%); }
+}
+
+/* Motion is decoration here; the skin is still itself without it. Frozen
+   sprites stay on screen, which reads as a still night sky rather than a
+   missing feature. */
+@media (prefers-reduced-motion: reduce) {
+  .skin-fx > span { animation: none; }
+}
+
+/* A still frame of a skin's weather inside its gallery tile. Static rather
+   than animated: forty-seven looping tiles in one scroll view would be both a
+   fire hazard for the battery and completely illegible. Falls back to `none`,
+   so tiles for skins without weather are untouched. */
+.skin-still::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--fx-still, none);
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* How a skin glows. Confined to accent and title text so the body copy that
+   actually has to be read is never blurred by it. */
+:root .text-accent,
+:root .text-title {
+  text-shadow: var(--glow, none);
+}
+
 /* Press Start 2P (OFL) self-hosted: no Google Fonts dependency, works offline
    and under strict CSPs. Fallback is monospace — closest to the pixel look
    (the old `cursive` fallback rendered handwriting when the CDN was blocked). */

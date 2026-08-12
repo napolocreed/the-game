@@ -1,4 +1,4 @@
-import { SkinMaterial } from '../types';
+import { SkinFx, SkinMaterial } from '../types';
 
 /**
  * Ageing effects for the "living" skins.
@@ -119,6 +119,105 @@ const vines = (
   return { image: url(svgTag(TILE, h, parts.join(''))), height: h, width: TILE };
 };
 
+/* --- Weather ------------------------------------------------------------
+   Animated layers. Each is a seamlessly tiled sprite that travels exactly one
+   tile per cycle, so the loop is invisible and the whole effect costs one
+   compositor transform instead of a repaint per frame.
+
+   Everything is scattered by a seeded generator rather than laid on a grid:
+   the eye finds a lattice instantly and stops believing in the rain. */
+
+/** Scatter n sprites through a tile, each drawn by the caller. */
+const scatter = (
+  seed: number, w: number, h: number, n: number,
+  draw: (x: number, y: number, r: () => number) => string,
+): string => {
+  const rand = lcg(seed);
+  const parts: string[] = [];
+  for (let i = 0; i < n; i++) {
+    parts.push(draw(Math.floor(rand() * w), Math.floor(rand() * h), rand));
+  }
+  return url(svgTag(w, h, parts.join('')));
+};
+
+const px = (x: number, y: number, w: number, h: number, fill: string, o = 1): string =>
+  `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"${o < 1 ? ` opacity="${o.toFixed(2)}"` : ''}/>`;
+
+/** Diagonal streaks. Two lengths so the wall of rain has depth. */
+const rain = (seed: number, colour: string, n: number): string =>
+  scatter(seed, 64, 96, n, (x, y, r) => {
+    const len = 4 + Math.floor(r() * 6);
+    // Faint on purpose. Rain is the densest effect here and the only one that
+    // covers the whole screen at once, so it has to sit under the text rather
+    // than compete with it.
+    const o = 0.12 + r() * 0.22;
+    // Each streak is a staircase of 1px steps — a diagonal drawn with square
+    // pixels, which is what rain looks like in this font's world.
+    let out = '';
+    for (let i = 0; i < len; i++) out += px(x + i, y + i * 2, 1, 2, colour, o);
+    return out;
+  });
+
+/** Petals: two-tone, tumbling, never quite the same shape twice. */
+const petals = (seed: number, light: string, dark: string, n: number): string =>
+  scatter(seed, 112, 112, n, (x, y, r) => {
+    const c = r() < 0.5 ? light : dark;
+    const o = 0.45 + r() * 0.4;
+    return r() < 0.5
+      ? px(x, y, 3, 2, c, o) + px(x + 2, y + 1, 2, 1, c, o)
+      : px(x, y, 2, 3, c, o) + px(x + 1, y + 2, 1, 2, c, o);
+  });
+
+/** Sparks going up. Small, hot, and mostly gone before they reach the top. */
+const embers = (seed: number, hot: string, cool: string, n: number): string =>
+  scatter(seed, 80, 120, n, (x, y, r) => {
+    const big = r() < 0.3;
+    const c = r() < 0.6 ? hot : cool;
+    return px(x, y, big ? 2 : 1, big ? 2 : 1, c, 0.3 + r() * 0.6);
+  });
+
+/** Snow: slow, round-ish, and never more than two pixels across. */
+const snow = (seed: number, colour: string, n: number): string =>
+  scatter(seed, 96, 96, n, (x, y, r) => {
+    const big = r() < 0.25;
+    return big
+      ? px(x, y, 2, 1, colour, 0.55) + px(x, y - 1, 1, 1, colour, 0.55) + px(x + 1, y + 1, 1, 1, colour, 0.4)
+      : px(x, y, 1, 1, colour, 0.35 + r() * 0.4);
+  });
+
+/** A field of stars, with a handful of bright ones. */
+const stars = (seed: number, colour: string, bright: string, n: number): string =>
+  scatter(seed, 160, 160, n, (x, y, r) => {
+    if (r() < 0.08) {
+      // The bright ones get a cross of single pixels — a pixel-art twinkle.
+      return px(x, y, 1, 1, bright) + px(x - 1, y, 1, 1, bright, 0.4) +
+        px(x + 1, y, 1, 1, bright, 0.4) + px(x, y - 1, 1, 1, bright, 0.4) +
+        px(x, y + 1, 1, 1, bright, 0.4);
+    }
+    return px(x, y, 1, 1, colour, 0.2 + r() * 0.55);
+  });
+
+/** Dust hanging in a shaft of light. Barely there, and very slow. */
+const motes = (seed: number, colour: string, n: number): string =>
+  scatter(seed, 128, 128, n, (x, y, r) => px(x, y, 1, 1, colour, 0.12 + r() * 0.25));
+
+/** Bubbles: a ring of pixels with a highlight, rising. */
+const bubbles = (seed: number, colour: string, n: number): string =>
+  scatter(seed, 88, 128, n, (x, y, r) => {
+    if (r() < 0.4) return px(x, y, 1, 1, colour, 0.3 + r() * 0.3);
+    return px(x + 1, y, 2, 1, colour, 0.45) + px(x, y + 1, 1, 2, colour, 0.45) +
+      px(x + 3, y + 1, 1, 2, colour, 0.45) + px(x + 1, y + 3, 2, 1, colour, 0.45) +
+      px(x + 1, y + 1, 1, 1, colour, 0.7);
+  });
+
+/** One bright line rolling down the screen, the way a CRT never quite syncs. */
+const scanRoll = (colour: string, period: number): string =>
+  `repeating-linear-gradient(to bottom, ${colour} 0 1px, transparent 1px ${period}px)`;
+
+/** A band of light travelling across the surface. */
+const sheen = (colour: string): string =>
+  `linear-gradient(105deg, transparent 42%, ${colour} 50%, transparent 58%)`;
+
 /** Fine, uneven grain — the tooth of paper or the grit of stone. */
 const grain = (alpha: number, frequency: number): string =>
   url(svgTag(140, 140,
@@ -190,6 +289,72 @@ export const patina = (livingId: string, stage: number, base?: SkinMaterial): Sk
 
   m.overlay = [base?.overlay, ...layers].filter(Boolean).join(', ');
   return m;
+};
+
+/**
+ * The signature effects.
+ *
+ * Reserved for skins worth a spectacle rather than sprinkled everywhere: if
+ * every skin had weather, none of them would feel like a reward. Two of them
+ * (Ember, Tidepool) sit early on the ladder on purpose, as proof that skins
+ * keep getting stranger.
+ *
+ * Every layer is slow and low-contrast. This runs behind an app someone opens
+ * at 7am to decide whether they went for a run, and nothing here is allowed to
+ * make that harder to read.
+ */
+export const FX: Record<string, SkinFx> = {
+  // Two speeds of rain, the near one faster — parallax with two layers.
+  rain: {
+    a: { image: rain(0x9a11, '#7fe8ff', 12), tile: 96, duration: 1.8, motion: 'fall' },
+    b: { image: rain(0x5c22, '#ff6fd0', 8), tile: 96, duration: 3.1, motion: 'fall' },
+  },
+  petals: {
+    a: { image: petals(0x5a11, '#ffc2d8', '#e087a8', 11), tile: 112, duration: 26, motion: 'fall' },
+    b: { image: petals(0x7c33, '#f7a8c4', '#c96f92', 7), tile: 112, duration: 44, motion: 'fall' },
+  },
+  embers: {
+    a: { image: embers(0xe111, '#ff9a3c', '#ffd88a', 14), tile: 120, duration: 13, motion: 'rise' },
+    b: { image: embers(0xe222, '#d4552a', '#ff8a4c', 9), tile: 120, duration: 23, motion: 'rise' },
+  },
+  snow: {
+    a: { image: snow(0x50f1, '#ffffff', 14), tile: 96, duration: 22, motion: 'fall' },
+    b: { image: snow(0x51f2, '#cfe8ff', 9), tile: 96, duration: 40, motion: 'fall' },
+  },
+  stars: {
+    a: { image: stars(0x57a5, '#ffffff', '#bfe0ff', 40), tile: 160, duration: 150, motion: 'fall' },
+  },
+  motes: {
+    a: { image: motes(0xd057, '#ffe8c0', 18), tile: 128, duration: 70, motion: 'rise' },
+  },
+  bubbles: {
+    a: { image: bubbles(0xb0b1, '#9fe8ff', 9), tile: 128, duration: 17, motion: 'rise' },
+    b: { image: bubbles(0xb0b2, '#6fc8e0', 6), tile: 128, duration: 31, motion: 'rise' },
+  },
+  // The line a CRT never quite holds still. Slow enough to be atmosphere
+  // rather than a fault.
+  roll: {
+    a: { image: scanRoll('rgba(255,255,255,0.055)', 5), tile: 5, duration: 6, motion: 'fall' },
+  },
+  sheen: {
+    // Off screen for most of the cycle: the long wait between passes is what
+    // makes it read as a glint rather than a strobe.
+    a: { image: sheen('rgba(255,232,160,0.14)'), tile: 0, duration: 15, motion: 'sweep' },
+  },
+  // Rain plus the scanline roll: the alley and the sign above it.
+  neon: {
+    a: { image: rain(0x9a11, '#7fe8ff', 11), tile: 96, duration: 1.9, motion: 'fall' },
+    b: { image: scanRoll('rgba(255,120,214,0.05)', 4), tile: 4, duration: 7, motion: 'fall' },
+  },
+};
+
+/** Neon-sign glows, applied to accent and title text. */
+export const GLOW: Record<string, string> = {
+  pink: '0 0 6px rgba(255,92,200,0.75), 0 0 14px rgba(255,92,200,0.35)',
+  mint: '0 0 6px rgba(126,255,200,0.7), 0 0 14px rgba(126,255,200,0.3)',
+  amber: '0 0 6px rgba(255,176,46,0.7), 0 0 16px rgba(255,138,30,0.32)',
+  violet: '0 0 6px rgba(215,168,255,0.7), 0 0 16px rgba(140,224,255,0.28)',
+  gold: '0 0 5px rgba(255,207,92,0.6), 0 0 14px rgba(255,207,92,0.28)',
 };
 
 /** Ready-made materials for skins that have a surface but do not age. */

@@ -308,6 +308,12 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-inset text-ink p-4 sm:p-6 md:p-8">
+      {/* A skin's weather. Empty and invisible unless the worn skin declares
+          one, and never in the way of a tap. */}
+      <div className="skin-fx" aria-hidden="true">
+        <span className="fx-a" />
+        <span className="fx-b" />
+      </div>
       <div className="max-w-4xl mx-auto">
         <Header profile={profile} onSettingsClick={() => setIsSettingsModalOpen(true)} />
         <main>
