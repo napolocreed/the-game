@@ -26,6 +26,7 @@ import MilestoneModal from './components/MilestoneModal';
 import { Habit, Quit, Task } from './types';
 import * as serviceWorkerRegistration from './utils/serviceWorkerRegistration';
 import UpdateNotification from './components/UpdateNotification';
+import SkinUnlockModal from './components/SkinUnlockModal';
 
 
 const App: React.FC = () => {
@@ -64,6 +65,12 @@ const App: React.FC = () => {
     dayNotes,
     tasks,
     dailyTask,
+    skins,
+    activeSkin,
+    newlyUnlockedSkins,
+    acknowledgeSkins,
+    selectSkin,
+    unlockCtx,
     handleAddTask,
     handleEditTask,
     handleCompleteTask,
@@ -253,7 +260,13 @@ const App: React.FC = () => {
       case 'calendar':
         return <CalendarView habits={habits} completions={completions} dayNotes={dayNotes} quits={quits} onDayClick={handleDayClick} />;
       case 'progress':
-        return <ProgressPage habits={habits} completions={completions} profile={profile} quits={quits} dayNotes={dayNotes} tasks={tasks} />;
+        return (
+          <ProgressPage
+            habits={habits} completions={completions} profile={profile} quits={quits}
+            dayNotes={dayNotes} tasks={tasks} skins={skins} unlockCtx={unlockCtx}
+            onOpenSkins={() => setIsSettingsModalOpen(true)}
+          />
+        );
       default:
         return null;
     }
@@ -339,6 +352,10 @@ const App: React.FC = () => {
         onToggleAutoBackup={setAutoBackupEnabled}
         lastAutoBackupDate={lastAutoBackupDate}
         onUpdateSettings={handleUpdateSettings}
+        skins={skins}
+        activeSkinId={activeSkin.id}
+        unlockCtx={unlockCtx}
+        onSelectSkin={selectSkin}
        />
        {confirmModalContent && (
            <ConfirmModal
@@ -445,6 +462,16 @@ const App: React.FC = () => {
                 <p>Permanently delete "{quitToDelete.name}" and all its history?</p>
                 <p className="text-sm text-danger-hi mt-2">Cannot be undone. Pause it instead?</p>
            </ConfirmModal>
+       )}
+       {/* Shown after the badge modal so a level-up reads in order: what you
+           achieved, then what it unlocked. */}
+       {newlyUnlockedBadges.length === 0 && newlyUnlockedSkins.length > 0 && (
+         <SkinUnlockModal
+           skins={newlyUnlockedSkins}
+           activeSkinId={activeSkin.id}
+           onWear={selectSkin}
+           onClose={acknowledgeSkins}
+         />
        )}
        {showUpdateNotification && <UpdateNotification onUpdate={handleUpdate} />}
     </div>

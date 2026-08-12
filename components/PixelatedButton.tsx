@@ -20,9 +20,22 @@ const PixelatedButton: React.FC<PixelatedButtonProps> = ({ children, className =
     : 'px-4 py-2';
 
   const has = (prefix: string) => new RegExp(`(^|\\s)(hover:|active:|disabled:)?${prefix}-`).test(className);
+  // `text-` is the one prefix that is not a colour namespace: `text-xs` and
+  // `text-center` live there too, and treating them as a colour override drops
+  // `text-ink` and leaves the label inheriting whatever the page happens to be.
+  const NON_COLOUR_TEXT = /^(xs|sm|base|lg|\d?xl|left|center|right|justify|start|end|ellipsis|clip|wrap|nowrap|balance|pretty|opacity)$/;
+  const hasTextColour = className
+    .split(/\s+/)
+    .some(c => {
+      const m = /^(?:hover:|active:|disabled:)?text-(.+)$/.exec(c);
+      if (!m) return false;
+      // Arbitrary values are a colour only when they look like one.
+      if (m[1].startsWith('[')) return /^\[(#|rgb|hsl|var\()/.test(m[1]);
+      return !NON_COLOUR_TEXT.test(m[1]);
+    });
   const defaults = [
     has('bg') ? '' : 'bg-raised hover:bg-frame',
-    has('text') ? '' : 'text-ink',
+    hasTextColour ? '' : 'text-ink',
     has('border') ? '' : 'border-frame',
     has('shadow') ? '' : 'shadow-hard-sm hover:shadow-hard-xs',
   ].filter(Boolean).join(' ');

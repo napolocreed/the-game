@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Habit, Completion, CompletionStatus, PlayerProfile, Quit, DayNote, Task } from '../types';
+import { Habit, Completion, CompletionStatus, PlayerProfile, Quit, DayNote, Task, Skin } from '../types';
+import NextSkinCard from './NextSkinCard';
+import { UnlockContext } from '../utils/skinUnlocks';
 import StatCard from './StatCard';
 import WeeklyActivityChart from './WeeklyActivityChart';
 import CategoryDistributionChart from './CategoryDistributionChart';
@@ -25,6 +27,9 @@ interface ProgressPageProps {
   quits: Quit[];
   dayNotes: { [dateKey: string]: DayNote };
   tasks: Task[];
+  skins: Skin[];
+  unlockCtx: UnlockContext;
+  onOpenSkins: () => void;
 }
 
 type StatsTab = 'overview' | 'habits' | 'quests' | 'recovery' | 'awards';
@@ -37,7 +42,7 @@ const SUB_TABS: { id: StatsTab; label: string; short: string }[] = [
   { id: 'awards', label: 'Awards', short: 'Awards' },
 ];
 
-const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profile, quits, dayNotes, tasks }) => {
+const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profile, quits, dayNotes, tasks, skins, unlockCtx, onOpenSkins }) => {
   const [tab, setTab] = useState<StatsTab>('overview');
 
   const totalCompletions = completions.filter(c => c.status === CompletionStatus.COMPLETED).length;
@@ -151,6 +156,7 @@ const ProgressPage: React.FC<ProgressPageProps> = ({ habits, completions, profil
 
       {tab === 'awards' && (
         <div>
+          <NextSkinCard skins={skins} ctx={unlockCtx} onOpenGallery={onOpenSkins} />
           <p className="text-xs text-accent mb-4">{unlockedTiers}/{totalTiers} tiers</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {BADGE_CATALOG.map(badge => (

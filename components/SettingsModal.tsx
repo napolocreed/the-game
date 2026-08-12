@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { PlayerProfile, Habit, PlayerSettings } from '../types';
+import { PlayerProfile, Habit, PlayerSettings, Skin } from '../types';
+import SkinGallery from './SkinGallery';
+import { UnlockContext } from '../utils/skinUnlocks';
 import PixelatedButton from './PixelatedButton';
 import { RestoreIcon } from './icons/RestoreIcon';
 import { TrashIcon } from './icons/TrashIcon';
@@ -27,6 +29,10 @@ interface SettingsModalProps {
   autoBackupEnabled: boolean;
   onToggleAutoBackup: (enabled: boolean) => void;
   lastAutoBackupDate: string | null;
+  skins: Skin[];
+  activeSkinId: string;
+  unlockCtx: UnlockContext;
+  onSelectSkin: (id: string) => void;
   onUpdateSettings: (settings: PlayerSettings) => void;
 }
 
@@ -37,7 +43,7 @@ const ToggleSwitch: React.FC<{ checked: boolean; onChange: (checked: boolean) =>
   </label>
 );
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile, habits, onRestore, onDelete, notificationPermission, onRequestPermission, onSendTestNotification, testNotifMessage, pushConfigured, pushEnabled, onTogglePush, pushStatusMessage, onExportData, onImportData, autoBackupEnabled, onToggleAutoBackup, lastAutoBackupDate, onUpdateSettings }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile, habits, onRestore, onDelete, notificationPermission, onRequestPermission, onSendTestNotification, testNotifMessage, pushConfigured, pushEnabled, onTogglePush, pushStatusMessage, onExportData, onImportData, autoBackupEnabled, onToggleAutoBackup, lastAutoBackupDate, onUpdateSettings, skins, activeSkinId, unlockCtx, onSelectSkin }) => {
   const importInputRef = useRef<HTMLInputElement>(null);
   
   if (!isOpen) return null;
@@ -77,6 +83,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, profile,
                     <p className="text-ink-dim">Badges Unlocked:</p>
                     <p className="text-xl text-ink-hi font-bold">{Object.keys(profile.unlockedBadges).length}</p>
                 </div>
+            </div>
+
+            <div className="mb-6">
+                <h3 className="text-lg text-accent mb-2">Appearance</h3>
+                <SkinGallery
+                  skins={skins}
+                  activeSkinId={activeSkinId}
+                  ctx={unlockCtx}
+                  onSelect={onSelectSkin}
+                />
             </div>
 
             <div className="mb-6">
